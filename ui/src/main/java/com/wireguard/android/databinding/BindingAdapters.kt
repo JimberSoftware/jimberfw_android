@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.databinding
+package com.jimberisolation.android.databinding
 
 import android.text.InputFilter
 import android.view.LayoutInflater
@@ -18,14 +18,14 @@ import androidx.databinding.adapters.ListenerUtil
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.wireguard.android.BR
-import com.wireguard.android.R
-import com.wireguard.android.databinding.ObservableKeyedRecyclerViewAdapter.RowConfigurationHandler
-import com.wireguard.android.widget.ToggleSwitch
-import com.wireguard.android.widget.ToggleSwitch.OnBeforeCheckedChangeListener
-import com.wireguard.android.widget.TvCardView
-import com.wireguard.config.Attribute
-import com.wireguard.config.InetNetwork
+import com.jimberisolation.android.BR
+import com.jimberisolation.android.R
+import com.jimberisolation.android.databinding.ObservableKeyedRecyclerViewAdapter.RowConfigurationHandler
+import com.jimberisolation.android.widget.ToggleSwitch
+import com.jimberisolation.android.widget.ToggleSwitch.OnBeforeCheckedChangeListener
+import com.jimberisolation.android.widget.TvCardView
+import com.jimberisolation.config.Attribute
+import com.jimberisolation.config.InetNetwork
 import java.net.InetAddress
 import java.util.Optional
 

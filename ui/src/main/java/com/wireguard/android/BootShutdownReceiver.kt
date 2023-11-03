@@ -2,14 +2,14 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android
+package com.jimberisolation.android
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.wireguard.android.backend.WgQuickBackend
-import com.wireguard.android.util.applicationScope
+import com.jimberisolation.android.backend.WgQuickBackend
+import com.jimberisolation.android.util.applicationScope
 import kotlinx.coroutines.launch
 
 class BootShutdownReceiver : BroadcastReceiver() {

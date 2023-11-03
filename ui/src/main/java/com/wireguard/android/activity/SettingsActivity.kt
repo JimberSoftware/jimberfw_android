@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.activity
+package com.jimberisolation.android.activity
 
 import android.content.ComponentName
 import android.content.Intent
@@ -15,12 +15,12 @@ import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import com.wireguard.android.Application
-import com.wireguard.android.QuickTileService
-import com.wireguard.android.R
-import com.wireguard.android.backend.WgQuickBackend
-import com.wireguard.android.preference.PreferencesPreferenceDataStore
-import com.wireguard.android.util.AdminKnobs
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.QuickTileService
+import com.jimberisolation.android.R
+import com.jimberisolation.android.backend.WgQuickBackend
+import com.jimberisolation.android.preference.PreferencesPreferenceDataStore
+import com.jimberisolation.android.util.AdminKnobs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

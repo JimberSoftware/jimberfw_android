@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.model
+package com.jimberisolation.android.model
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -12,19 +12,19 @@ import android.util.Log
 import android.widget.Toast
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
-import com.wireguard.android.Application.Companion.get
-import com.wireguard.android.Application.Companion.getBackend
-import com.wireguard.android.Application.Companion.getTunnelManager
-import com.wireguard.android.BR
-import com.wireguard.android.R
-import com.wireguard.android.backend.Statistics
-import com.wireguard.android.backend.Tunnel
-import com.wireguard.android.configStore.ConfigStore
-import com.wireguard.android.databinding.ObservableSortedKeyedArrayList
-import com.wireguard.android.util.ErrorMessages
-import com.wireguard.android.util.UserKnobs
-import com.wireguard.android.util.applicationScope
-import com.wireguard.config.Config
+import com.jimberisolation.android.Application.Companion.get
+import com.jimberisolation.android.Application.Companion.getBackend
+import com.jimberisolation.android.Application.Companion.getTunnelManager
+import com.jimberisolation.android.BR
+import com.jimberisolation.android.R
+import com.jimberisolation.android.backend.Statistics
+import com.jimberisolation.android.backend.Tunnel
+import com.jimberisolation.android.configStore.ConfigStore
+import com.jimberisolation.android.databinding.ObservableSortedKeyedArrayList
+import com.jimberisolation.android.util.ErrorMessages
+import com.jimberisolation.android.util.UserKnobs
+import com.jimberisolation.android.util.applicationScope
+import com.jimberisolation.config.Config
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -217,7 +217,7 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
                 val manager = getTunnelManager()
                 if (intent == null) return@launch
                 val action = intent.action ?: return@launch
-                if ("com.wireguard.android.action.REFRESH_TUNNEL_STATES" == action) {
+                if ("com.jimberisolation.android.action.REFRESH_TUNNEL_STATES" == action) {
                     manager.refreshTunnelStates()
                     return@launch
                 }
@@ -225,8 +225,8 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
                     return@launch
                 val state: Tunnel.State
                 state = when (action) {
-                    "com.wireguard.android.action.SET_TUNNEL_UP" -> Tunnel.State.UP
-                    "com.wireguard.android.action.SET_TUNNEL_DOWN" -> Tunnel.State.DOWN
+                    "com.jimberisolation.android.action.SET_TUNNEL_UP" -> Tunnel.State.UP
+                    "com.jimberisolation.android.action.SET_TUNNEL_DOWN" -> Tunnel.State.DOWN
                     else -> return@launch
                 }
                 val tunnelName = intent.getStringExtra("tunnel") ?: return@launch

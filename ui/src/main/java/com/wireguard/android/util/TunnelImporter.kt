@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.util
+package com.jimberisolation.android.util
 
 import android.content.ContentResolver
 import android.net.Uri
@@ -11,12 +11,12 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
-import com.wireguard.android.Application
-import com.wireguard.android.R
-import com.wireguard.android.fragment.ConfigNamingDialogFragment
-import com.wireguard.android.model.ObservableTunnel
-import com.wireguard.config.BadConfigException
-import com.wireguard.config.Config
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.R
+import com.jimberisolation.android.fragment.ConfigNamingDialogFragment
+import com.jimberisolation.android.model.ObservableTunnel
+import com.jimberisolation.config.BadConfigException
+import com.jimberisolation.config.Config
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

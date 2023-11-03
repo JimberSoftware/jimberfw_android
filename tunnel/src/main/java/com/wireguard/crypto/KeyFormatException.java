@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.crypto;
+package com.jimberisolation.crypto;
 
-import com.wireguard.util.NonNullForAll;
+import com.jimberisolation.util.NonNullForAll;
 
 /**
  * An exception thrown when attempting to parse an invalid key (too short, too long, or byte

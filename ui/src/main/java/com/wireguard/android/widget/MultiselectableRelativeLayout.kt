@@ -2,13 +2,13 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.widget
+package com.jimberisolation.android.widget
 
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.widget.RelativeLayout
-import com.wireguard.android.R
+import com.jimberisolation.android.R
 
 class MultiselectableRelativeLayout @JvmOverloads constructor(
     context: Context? = null,

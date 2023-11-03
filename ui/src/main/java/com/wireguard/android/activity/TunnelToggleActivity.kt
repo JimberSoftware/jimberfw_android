@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.activity
+package com.jimberisolation.android.activity
 
 import android.content.ComponentName
 import android.os.Build
@@ -14,12 +14,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.wireguard.android.Application
-import com.wireguard.android.QuickTileService
-import com.wireguard.android.R
-import com.wireguard.android.backend.GoBackend
-import com.wireguard.android.backend.Tunnel
-import com.wireguard.android.util.ErrorMessages
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.QuickTileService
+import com.jimberisolation.android.R
+import com.jimberisolation.android.backend.GoBackend
+import com.jimberisolation.android.backend.Tunnel
+import com.jimberisolation.android.util.ErrorMessages
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.N)

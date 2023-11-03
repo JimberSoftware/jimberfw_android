@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.fragment
+package com.jimberisolation.android.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -23,16 +23,16 @@ import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
-import com.wireguard.android.Application
-import com.wireguard.android.R
-import com.wireguard.android.backend.Tunnel
-import com.wireguard.android.databinding.TunnelEditorFragmentBinding
-import com.wireguard.android.model.ObservableTunnel
-import com.wireguard.android.util.AdminKnobs
-import com.wireguard.android.util.BiometricAuthenticator
-import com.wireguard.android.util.ErrorMessages
-import com.wireguard.android.viewmodel.ConfigProxy
-import com.wireguard.config.Config
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.R
+import com.jimberisolation.android.backend.Tunnel
+import com.jimberisolation.android.databinding.TunnelEditorFragmentBinding
+import com.jimberisolation.android.model.ObservableTunnel
+import com.jimberisolation.android.util.AdminKnobs
+import com.jimberisolation.android.util.BiometricAuthenticator
+import com.jimberisolation.android.util.ErrorMessages
+import com.jimberisolation.android.viewmodel.ConfigProxy
+import com.jimberisolation.config.Config
 import kotlinx.coroutines.launch
 
 /**

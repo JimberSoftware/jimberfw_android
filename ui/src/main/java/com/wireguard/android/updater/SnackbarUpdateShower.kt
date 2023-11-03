@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.updater
+package com.jimberisolation.android.updater
 
 import android.content.Intent
 import android.net.Uri
@@ -15,9 +15,9 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import com.wireguard.android.R
-import com.wireguard.android.util.ErrorMessages
-import com.wireguard.android.util.QuantityFormatter
+import com.jimberisolation.android.R
+import com.jimberisolation.android.util.ErrorMessages
+import com.jimberisolation.android.util.QuantityFormatter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

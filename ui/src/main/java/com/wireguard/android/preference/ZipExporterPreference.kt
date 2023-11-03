@@ -2,21 +2,21 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.preference
+package com.jimberisolation.android.preference
 
 import android.content.Context
 import android.util.AttributeSet
 import android.util.Log
 import androidx.preference.Preference
 import com.google.android.material.snackbar.Snackbar
-import com.wireguard.android.Application
-import com.wireguard.android.R
-import com.wireguard.android.util.AdminKnobs
-import com.wireguard.android.util.BiometricAuthenticator
-import com.wireguard.android.util.DownloadsFileSaver
-import com.wireguard.android.util.ErrorMessages
-import com.wireguard.android.util.activity
-import com.wireguard.android.util.lifecycleScope
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.R
+import com.jimberisolation.android.util.AdminKnobs
+import com.jimberisolation.android.util.BiometricAuthenticator
+import com.jimberisolation.android.util.DownloadsFileSaver
+import com.jimberisolation.android.util.ErrorMessages
+import com.jimberisolation.android.util.activity
+import com.jimberisolation.android.util.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async

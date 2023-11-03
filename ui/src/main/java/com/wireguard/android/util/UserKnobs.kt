@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.util
+package com.jimberisolation.android.util
 
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import com.wireguard.android.Application
+import com.jimberisolation.android.Application
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

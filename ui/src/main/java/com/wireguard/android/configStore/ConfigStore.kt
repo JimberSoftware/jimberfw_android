@@ -2,9 +2,9 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.configStore
+package com.jimberisolation.android.configStore
 
-import com.wireguard.config.Config
+import com.jimberisolation.config.Config
 
 /**
  * Interface for persistent storage providers for WireGuard configurations.

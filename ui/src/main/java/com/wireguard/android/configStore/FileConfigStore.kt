@@ -2,13 +2,13 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.configStore
+package com.jimberisolation.android.configStore
 
 import android.content.Context
 import android.util.Log
-import com.wireguard.android.R
-import com.wireguard.config.BadConfigException
-import com.wireguard.config.Config
+import com.jimberisolation.android.R
+import com.jimberisolation.config.BadConfigException
+import com.jimberisolation.config.Config
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException

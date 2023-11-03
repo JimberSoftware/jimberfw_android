@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.fragment
+package com.jimberisolation.android.fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -15,12 +15,12 @@ import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.wireguard.android.R
-import com.wireguard.android.backend.Tunnel
-import com.wireguard.android.databinding.TunnelDetailFragmentBinding
-import com.wireguard.android.databinding.TunnelDetailPeerBinding
-import com.wireguard.android.model.ObservableTunnel
-import com.wireguard.android.util.QuantityFormatter
+import com.jimberisolation.android.R
+import com.jimberisolation.android.backend.Tunnel
+import com.jimberisolation.android.databinding.TunnelDetailFragmentBinding
+import com.jimberisolation.android.databinding.TunnelDetailPeerBinding
+import com.jimberisolation.android.model.ObservableTunnel
+import com.jimberisolation.android.util.QuantityFormatter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

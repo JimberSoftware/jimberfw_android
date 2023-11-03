@@ -3,19 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.backend;
+package com.jimberisolation.android.backend;
 
 import android.content.Context;
 import android.util.Log;
 import android.util.Pair;
 
-import com.wireguard.android.backend.BackendException.Reason;
-import com.wireguard.android.backend.Tunnel.State;
-import com.wireguard.android.util.RootShell;
-import com.wireguard.android.util.ToolsInstaller;
-import com.wireguard.config.Config;
-import com.wireguard.crypto.Key;
-import com.wireguard.util.NonNullForAll;
+import com.jimberisolation.android.backend.BackendException.Reason;
+import com.jimberisolation.android.backend.Tunnel.State;
+import com.jimberisolation.android.util.RootShell;
+import com.jimberisolation.android.util.ToolsInstaller;
+import com.jimberisolation.config.Config;
+import com.jimberisolation.crypto.Key;
+import com.jimberisolation.util.NonNullForAll;
 
 import java.io.File;
 import java.io.FileOutputStream;

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.preference
+package com.jimberisolation.android.preference
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

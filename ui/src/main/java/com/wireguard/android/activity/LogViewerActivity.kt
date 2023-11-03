@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.activity
+package com.jimberisolation.android.activity
 
 import android.content.ClipDescription.compareMimeTypes
 import android.content.ContentProvider
@@ -36,13 +36,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
-import com.wireguard.android.BuildConfig
-import com.wireguard.android.R
-import com.wireguard.android.databinding.LogViewerActivityBinding
-import com.wireguard.android.util.DownloadsFileSaver
-import com.wireguard.android.util.ErrorMessages
-import com.wireguard.android.util.resolveAttribute
-import com.wireguard.crypto.KeyPair
+import com.jimberisolation.android.BuildConfig
+import com.jimberisolation.android.R
+import com.jimberisolation.android.databinding.LogViewerActivityBinding
+import com.jimberisolation.android.util.DownloadsFileSaver
+import com.jimberisolation.android.util.ErrorMessages
+import com.jimberisolation.android.util.resolveAttribute
+import com.jimberisolation.crypto.KeyPair
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

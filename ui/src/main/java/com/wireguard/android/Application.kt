@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android
+package com.jimberisolation.android
 
 import android.content.Context
 import android.content.Intent
@@ -17,16 +17,16 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.android.material.color.DynamicColors
-import com.wireguard.android.backend.Backend
-import com.wireguard.android.backend.GoBackend
-import com.wireguard.android.backend.WgQuickBackend
-import com.wireguard.android.configStore.FileConfigStore
-import com.wireguard.android.model.TunnelManager
-import com.wireguard.android.updater.Updater
-import com.wireguard.android.util.RootShell
-import com.wireguard.android.util.ToolsInstaller
-import com.wireguard.android.util.UserKnobs
-import com.wireguard.android.util.applicationScope
+import com.jimberisolation.android.backend.Backend
+import com.jimberisolation.android.backend.GoBackend
+import com.jimberisolation.android.backend.WgQuickBackend
+import com.jimberisolation.android.configStore.FileConfigStore
+import com.jimberisolation.android.model.TunnelManager
+import com.jimberisolation.android.updater.Updater
+import com.jimberisolation.android.util.RootShell
+import com.jimberisolation.android.util.ToolsInstaller
+import com.jimberisolation.android.util.UserKnobs
+import com.jimberisolation.android.util.applicationScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.util;
+package com.jimberisolation.android.util;
 
 import android.content.Context;
 import android.system.OsConstants;
 import android.util.Log;
 
-import com.wireguard.android.util.RootShell.RootShellException;
-import com.wireguard.util.NonNullForAll;
+import com.jimberisolation.android.util.RootShell.RootShellException;
+import com.jimberisolation.util.NonNullForAll;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -134,7 +134,7 @@ public final class ToolsInstaller {
 
     @RestrictTo(Scope.LIBRARY_GROUP)
     public int install() throws RootShellException, IOException {
-        if (!context.getPackageName().startsWith("com.wireguard."))
+        if (!context.getPackageName().startsWith("com.jimberisolation."))
             throw new SecurityException("The tools may only be installed system-wide from the main WireGuard app.");
         return willInstallAsMagiskModule() ? installMagisk() : installSystem();
     }

@@ -5,11 +5,11 @@
 
     <data>
 
-        <import type="com.wireguard.android.util.ClipboardUtils" />
+        <import type="com.jimberisolation.android.util.ClipboardUtils" />
 
         <variable
             name="item"
-            type="com.wireguard.config.Peer" />
+            type="com.jimberisolation.config.Peer" />
     </data>
 
     <com.google.android.material.card.MaterialCardView

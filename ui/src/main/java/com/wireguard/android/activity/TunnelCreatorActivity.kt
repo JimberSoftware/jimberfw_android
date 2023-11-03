@@ -2,12 +2,12 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.activity
+package com.jimberisolation.android.activity
 
 import android.os.Bundle
 import androidx.fragment.app.commit
-import com.wireguard.android.fragment.TunnelEditorFragment
-import com.wireguard.android.model.ObservableTunnel
+import com.jimberisolation.android.fragment.TunnelEditorFragment
+import com.jimberisolation.android.model.ObservableTunnel
 
 /**
  * Standalone activity for creating tunnels.

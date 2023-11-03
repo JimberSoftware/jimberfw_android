@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.model
+package com.jimberisolation.android.model
 
 object TunnelComparator : Comparator<String> {
     private class NaturalSortString(originalString: String) {

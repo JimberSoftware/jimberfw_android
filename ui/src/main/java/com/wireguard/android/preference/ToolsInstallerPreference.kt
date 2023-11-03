@@ -2,15 +2,15 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.preference
+package com.jimberisolation.android.preference
 
 import android.content.Context
 import android.util.AttributeSet
 import androidx.preference.Preference
-import com.wireguard.android.Application
-import com.wireguard.android.R
-import com.wireguard.android.util.ToolsInstaller
-import com.wireguard.android.util.lifecycleScope
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.R
+import com.jimberisolation.android.util.ToolsInstaller
+import com.jimberisolation.android.util.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.util;
+package com.jimberisolation.util;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

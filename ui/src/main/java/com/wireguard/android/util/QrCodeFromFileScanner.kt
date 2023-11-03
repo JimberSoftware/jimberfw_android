@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.util
+package com.jimberisolation.android.util
 
 import android.content.ContentResolver
 import android.graphics.Bitmap

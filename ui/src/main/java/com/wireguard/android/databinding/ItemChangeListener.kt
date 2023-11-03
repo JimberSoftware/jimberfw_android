@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.databinding
+package com.jimberisolation.android.databinding
 
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +11,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ObservableList
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
-import com.wireguard.android.BR
+import com.jimberisolation.android.BR
 import java.lang.ref.WeakReference
 
 /**

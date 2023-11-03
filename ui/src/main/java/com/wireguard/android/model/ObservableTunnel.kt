@@ -2,17 +2,17 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.model
+package com.jimberisolation.android.model
 
 import android.util.Log
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
-import com.wireguard.android.BR
-import com.wireguard.android.backend.Statistics
-import com.wireguard.android.backend.Tunnel
-import com.wireguard.android.databinding.Keyed
-import com.wireguard.android.util.applicationScope
-import com.wireguard.config.Config
+import com.jimberisolation.android.BR
+import com.jimberisolation.android.backend.Statistics
+import com.jimberisolation.android.backend.Tunnel
+import com.jimberisolation.android.databinding.Keyed
+import com.jimberisolation.android.util.applicationScope
+import com.jimberisolation.config.Config
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

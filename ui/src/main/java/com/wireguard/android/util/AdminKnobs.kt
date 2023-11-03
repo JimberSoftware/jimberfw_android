@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.util
+package com.jimberisolation.android.util
 
 import android.content.RestrictionsManager
 import androidx.core.content.getSystemService
-import com.wireguard.android.Application
+import com.jimberisolation.android.Application
 
 object AdminKnobs {
     private val restrictions: RestrictionsManager? = Application.get().getSystemService()

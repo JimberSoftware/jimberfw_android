@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.util
+package com.jimberisolation.android.util
 
 import android.content.Context
 import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
-import com.wireguard.android.Application
-import com.wireguard.android.activity.SettingsActivity
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.activity.SettingsActivity
 import kotlinx.coroutines.CoroutineScope
 
 fun Context.resolveAttribute(@AttrRes attrRes: Int): Int {

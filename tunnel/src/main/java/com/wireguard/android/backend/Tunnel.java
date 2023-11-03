@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.wireguard.android.backend;
+package com.jimberisolation.android.backend;
 
-import com.wireguard.util.NonNullForAll;
+import com.jimberisolation.util.NonNullForAll;
 
 import java.util.regex.Pattern;
 

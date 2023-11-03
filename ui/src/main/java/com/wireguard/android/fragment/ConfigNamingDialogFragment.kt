@@ -2,7 +2,7 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.fragment
+package com.jimberisolation.android.fragment
 
 import android.app.Dialog
 import android.os.Bundle
@@ -10,11 +10,11 @@ import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.wireguard.android.Application
-import com.wireguard.android.R
-import com.wireguard.android.databinding.ConfigNamingDialogFragmentBinding
-import com.wireguard.config.BadConfigException
-import com.wireguard.config.Config
+import com.jimberisolation.android.Application
+import com.jimberisolation.android.R
+import com.jimberisolation.android.databinding.ConfigNamingDialogFragmentBinding
+import com.jimberisolation.config.BadConfigException
+import com.jimberisolation.config.Config
 import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.io.IOException

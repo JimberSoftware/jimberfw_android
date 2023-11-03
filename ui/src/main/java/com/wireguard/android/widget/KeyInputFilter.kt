@@ -2,12 +2,12 @@
  * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.wireguard.android.widget
+package com.jimberisolation.android.widget
 
 import android.text.InputFilter
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import com.wireguard.crypto.Key
+import com.jimberisolation.crypto.Key
 
 /**
  * InputFilter for entering WireGuard private/public keys encoded with base64.
