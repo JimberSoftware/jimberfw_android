@@ -1,7 +1,11 @@
 #!/bin/bash
 
+# Load variables from .env file
+if [ -f ".env" ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
 # Variables
-TELEGRAM_BOT_TOKEN="868129294:AAEd-UDDSru9zGeGklzWL6mPO33NovuXYqo"
 TELEGRAM_CHAT_ID="-1001186043363"
 
 APK_PATH="./ui/build/outputs/apk/release/ui-release.apk"
