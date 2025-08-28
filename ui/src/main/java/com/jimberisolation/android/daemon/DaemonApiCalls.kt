@@ -24,10 +24,7 @@ suspend fun createDaemon(userId: Int, company: String, daemonData: CreateDaemonA
                 val jsonObject = JSONObject(it)
                 val message = jsonObject.getString("message")
 
-                val jsonArray = JSONArray(message)
-                val firstEl = jsonArray.get(0)
-
-                return Result.failure(Exception(firstEl.toString()))
+                return Result.failure(Exception(message))
             }
         }
 
