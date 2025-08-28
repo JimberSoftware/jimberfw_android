@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.os.BundleCompat
 import androidx.core.view.MenuProvider
@@ -42,6 +43,19 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
     private var haveShownKeys = false
     private var binding: TunnelEditorFragmentBinding? = null
     private var tunnel: ObservableTunnel? = null
+
+    private var logoTapCount = 0
+    private val tapTimeout = 500L
+    private var lastTapTime = 0L
+
+    enum class EditMode { BASIC, FULL }
+
+    var editMode: EditMode = EditMode.FULL
+        set(value) {
+            if (field == value) return
+            field = value
+            binding?.let { applyEditMode(it) }
+        }
 
     private fun onConfigLoaded(config: Config) {
         binding?.config = ConfigProxy(config)
@@ -80,12 +94,34 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
             executePendingBindings()
             privateKeyTextLayout.setEndIconOnClickListener { config?.`interface`?.generateKeyPair() }
         }
+
         return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+        binding?.let { applyEditMode(it) }
+
+        editMode = EditMode.BASIC
+
+        val toolbar = requireActivity().findViewById<ImageView>(R.id.logo)
+        toolbar?.setOnClickListener {
+            val now = System.currentTimeMillis()
+            if (now - lastTapTime > tapTimeout) {
+                logoTapCount = 1
+            } else {
+                logoTapCount++
+            }
+            lastTapTime = now
+
+            if (logoTapCount >= 5) {
+                editMode = EditMode.FULL
+                binding?.let { applyEditMode(it) }
+                logoTapCount = 0
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -307,6 +343,40 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
             }
         } else {
             showPrivateKey(edit)
+        }
+    }
+
+    private fun applyEditMode(binding: TunnelEditorFragmentBinding) {
+        var isFullEdit = (editMode == EditMode.FULL)
+
+        // Device name is always visible and enabled
+        binding.interfaceDeviceNameText.isEnabled = true
+        binding.interfaceDeviceNameText.visibility = View.VISIBLE
+        binding.interfaceDeviceNameLayout.visibility = View.VISIBLE
+
+        // Show/hide the rest depending on full/basics mode
+        val fieldsToToggle = listOf(
+            binding.interfaceTitle,
+            binding.privateKeyTextLayout,
+            binding.privateKeyText,
+            binding.publicKeyLabelLayout,
+            binding.publicKeyText,
+            binding.addressesLabelLayout,
+            binding.addressesLabelText,
+            binding.listenPortLabelLayout,
+            binding.listenPortText,
+            binding.dnsServersLabelLayout,
+            binding.dnsServersText,
+            binding.mtuLabelLayout,
+            binding.mtuText,
+            binding.setExcludedApplications,
+            binding.addPeerButton,
+            binding.peersLayout
+        )
+
+        fieldsToToggle.forEach { view ->
+            view.visibility = if (isFullEdit) View.VISIBLE else View.GONE
+            if (view is EditText) view.isEnabled = isFullEdit
         }
     }
 

@@ -6,9 +6,8 @@
     <data>
 
         <import type="com.jimberisolation.android.util.ClipboardUtils" />
-
+        <import type="android.view.View"/>
         <import type="com.jimberisolation.android.widget.KeyInputFilter" />
-
         <import type="com.jimberisolation.android.widget.NameInputFilter" />
 
         <variable
@@ -189,7 +188,6 @@
                                 android:text="@={config.interface.listenPort}"
                                 android:textAlignment="center" />
                         </com.google.android.material.textfield.TextInputLayout>
-
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/dns_servers_label_layout"
