@@ -61,8 +61,8 @@ class ObservableTunnel internal constructor(
             this@ObservableTunnel.name
     }
 
-    fun onNameChanged(name: String): String {
-        this.name = name
+    fun onDeviceNameChanged(name: String): String {
+        this.deviceName = name
         notifyPropertyChanged(BR.name)
         return name
     }

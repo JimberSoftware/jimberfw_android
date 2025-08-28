@@ -81,6 +81,11 @@ class FileConfigStore(private val context: Context) : ConfigStore {
     @Throws(IOException::class)
     override fun rename(tunnel: ObservableTunnel, replacement: String) {
         Log.d(TAG, "Renaming configuration for tunnel ${tunnel.getDeviceName()} to $replacement")
+
+        Log.e("TEST", "userId-${tunnel.getUserId()}-daemon-${tunnel.getDaemonId()}-name-${tunnel.getDeviceName()}")
+        Log.e("TEST2", "userId-${tunnel.getUserId()}-daemon-${tunnel.getDaemonId()}-name-${replacement}")
+
+
         val file = fileFor("userId-${tunnel.getUserId()}-daemon-${tunnel.getDaemonId()}-name-${tunnel.getDeviceName()}")
         val replacementFile = fileFor("userId-${tunnel.getUserId()}-daemon-${tunnel.getDaemonId()}-name-${replacement}")
         if (!replacementFile.createNewFile()) throw IOException(context.getString(R.string.config_exists_error, replacement))

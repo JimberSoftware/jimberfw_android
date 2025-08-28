@@ -265,7 +265,7 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
             if (originalState == Tunnel.State.UP)
                 withContext(Dispatchers.IO) { getBackend().setState(tunnel, Tunnel.State.DOWN, null) }
             withContext(Dispatchers.IO) { configStore.rename(tunnel, name) }
-            newName = tunnel.onNameChanged(name)
+            newName = tunnel.onDeviceNameChanged(name)
             if (originalState == Tunnel.State.UP)
                 withContext(Dispatchers.IO) { getBackend().setState(tunnel, Tunnel.State.UP, tunnel.config) }
         } catch (e: Throwable) {

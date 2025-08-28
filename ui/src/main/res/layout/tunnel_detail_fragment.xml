@@ -146,7 +146,7 @@
                         android:textAppearance="?attr/textAppearanceBodyLarge"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@+id/public_key_label"
-                        tools:text="wOs2eguFEohqIZxlSJ1CAT9584tc6ejj9hfGFsoBVkA=" />
+                        tools:text="wOs2eguFEohqIZxlSJ1CAT9584tc6ejj9hfGFsoBVkA=" />`
 
                     <TextView
                         android:id="@+id/addresses_label"

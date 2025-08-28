@@ -128,10 +128,10 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
             val activity = requireActivity()
             activity.lifecycleScope.launch {
                 when {
-                    tunnel!!.name != binding!!.name -> {
-                        Log.d(TAG, "Attempting to rename tunnel to " + binding!!.name)
+                    tunnel!!.getDeviceName() != binding!!.deviceName -> {
+                        Log.d(TAG, "Attempting to rename tunnel to " + binding!!.deviceName)
                         try {
-                            tunnel!!.setNameAsync(binding!!.name!!)
+                            tunnel!!.setNameAsync(binding!!.deviceName!!)
                             onTunnelRenamed(tunnel!!, newConfig, null)
                         } catch (e: Throwable) {
                             onTunnelRenamed(tunnel!!, newConfig, e)
@@ -201,7 +201,7 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
         if (binding == null) return
         binding!!.config = ConfigProxy()
         if (tunnel != null) {
-            binding!!.name = tunnel!!.name
+            binding!!.deviceName = tunnel!!.getDeviceName()
             lifecycleScope.launch {
                 try {
                     onConfigLoaded(tunnel!!.getConfigAsync())
@@ -209,7 +209,7 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
                 }
             }
         } else {
-            binding!!.name = ""
+            binding!!.deviceName = ""
         }
     }
 
