@@ -48,7 +48,7 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
     private var haveLoaded = false
 
     private fun addToList(createTunnelData: CreateTunnelData, config: Config?, state: Tunnel.State): ObservableTunnel {
-        val tunnel = ObservableTunnel(this, createTunnelData.name, createTunnelData.daemonId, createTunnelData.userId, config, state)
+        val tunnel = ObservableTunnel(this, createTunnelData.companyName, createTunnelData.daemonId, createTunnelData.userId, createTunnelData.deviceName, config, state)
 
         if(!tunnelMap.containsKey(tunnel.name)) {
             tunnelMap.add(tunnel)
@@ -88,14 +88,14 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
     }
 
     suspend fun create(createTunnelData: CreateTunnelData, config: Config?): ObservableTunnel = withContext(Dispatchers.Main.immediate) {
-        val name = createTunnelData.name;
+        val tunnelName = createTunnelData.companyName;
 
-        Log.i("TUNNEL", "IMPORTING TUNNEL WITH NAME ${name}")
+        Log.i("TUNNEL", "IMPORTING TUNNEL WITH NAME ${tunnelName}")
 
-        if (Tunnel.isNameInvalid(name))
+        if (Tunnel.isNameInvalid(tunnelName))
             throw IllegalArgumentException(context.getString(R.string.tunnel_error_invalid_name))
-        if (tunnelMap.containsKey(name))
-            throw IllegalArgumentException(context.getString(R.string.tunnel_error_already_exists, name))
+        if (tunnelMap.containsKey(tunnelName))
+            throw IllegalArgumentException(context.getString(R.string.tunnel_error_already_exists, tunnelName))
         addToList(createTunnelData, withContext(Dispatchers.IO) { configStore.create(createTunnelData, config!!) }, Tunnel.State.DOWN)
     }
 
@@ -194,8 +194,9 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
 
     private fun onTunnelsLoaded(present: Iterable<TunnelInfo>, running: Collection<String>) {
         for (info in present) {
-            val createTunnelData = CreateTunnelData(info.name, info.daemonId, info.userId)
-            addToList(createTunnelData,  null, if (running.contains(info.name)) Tunnel.State.UP else Tunnel.State.DOWN)
+            val createTunnelData = CreateTunnelData(info.deviceName, info.daemonId, info.userId, info.companyName)
+            print(createTunnelData)
+            addToList(createTunnelData,  null, if (running.contains(info.deviceName)) Tunnel.State.UP else Tunnel.State.DOWN)
         }
 
         applicationScope.launch {

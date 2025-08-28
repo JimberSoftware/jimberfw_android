@@ -34,7 +34,7 @@ object TunnelImporter {
 
             val userId = SharedStorage.getInstance().getCurrentUser()?.id;
 
-            val createTunnelData = CreateTunnelData(daemonName, daemonId, userId!!);
+            val createTunnelData = CreateTunnelData(daemonName, daemonId, userId!!, companyName);
             val createdTunnel = Application.getTunnelManager().create(createTunnelData, config)
 
             val kp = SharedStorage.getInstance().getDaemonKeyPairByDaemonId(daemonId)

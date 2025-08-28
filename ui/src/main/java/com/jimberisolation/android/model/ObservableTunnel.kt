@@ -25,6 +25,7 @@ class ObservableTunnel internal constructor(
     private var name: String,
     private var daemonId: Int,
     private var userId: Int,
+    private var deviceName: String,
     config: Config?,
     state: Tunnel.State
 ) : BaseObservable(), Keyed<String>, Tunnel {
@@ -44,6 +45,9 @@ class ObservableTunnel internal constructor(
 
     @Bindable
     fun isApproved() = isApproved
+
+    @Bindable
+    fun getDeviceName() = deviceName
 
     @Bindable
     fun setIsApproved(isApproved: Boolean) {

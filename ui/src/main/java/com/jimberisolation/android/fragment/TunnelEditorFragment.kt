@@ -119,7 +119,7 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
                 binding!!.config!!.resolve()
             } catch (e: Throwable) {
                 val error = ErrorMessages[e]
-                val tunnelName = if (tunnel == null) binding!!.name else tunnel!!.name
+                val tunnelName = if (tunnel == null) binding!!.deviceName else tunnel!!.name
                 val message = getString(R.string.config_save_error, tunnelName, error)
                 Log.e(TAG, message, e)
                 Snackbar.make(binding!!.mainContainer, error, Snackbar.LENGTH_LONG).show()

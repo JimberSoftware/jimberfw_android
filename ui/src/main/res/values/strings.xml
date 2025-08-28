@@ -268,4 +268,5 @@
     <string name="email">Email</string>
     <string name="your_verification_code_has_been_sent_to_your_email_address">Your verification code has been sent to your email address</string>
     <string name="verification_token">Verification token</string>
+    <string name="device_name">Device name</string>
 </resources>
