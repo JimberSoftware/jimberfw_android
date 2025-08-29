@@ -11,6 +11,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Lifecycle
@@ -32,12 +33,19 @@ class TunnelDetailFragment : BaseFragment(), MenuProvider {
     private var lastState = Tunnel.State.TOGGLE
     private var timerActive = true
 
+    private var logoTapCount = 0
+    private val tapTimeout = 500L
+    private var lastTapTime = 0L
+
+    private var showEditMenu = false
+
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         return false
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.tunnel_detail, menu)
+        menu.findItem(R.id.menu_action_edit).isVisible = showEditMenu
     }
 
     override fun onCreateView(
@@ -47,6 +55,24 @@ class TunnelDetailFragment : BaseFragment(), MenuProvider {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = TunnelDetailFragmentBinding.inflate(inflater, container, false)
         binding?.executePendingBindings()
+
+        val toolbar = requireActivity().findViewById<ImageView>(R.id.logo)
+        toolbar?.setOnClickListener {
+            val now = System.currentTimeMillis()
+            if (now - lastTapTime > tapTimeout) {
+                logoTapCount = 1
+            } else {
+                logoTapCount++
+            }
+            lastTapTime = now
+
+            if (logoTapCount >= 5) {
+                logoTapCount = 0
+                showEditMenu = true
+                requireActivity().invalidateMenu()
+            }
+        }
+
         return binding?.root
     }
 
