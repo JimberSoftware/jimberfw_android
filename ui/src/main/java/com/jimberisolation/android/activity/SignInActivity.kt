@@ -46,6 +46,7 @@ import isValidMobileHostname
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import register
+import sanitizeTunnelName
 import java.util.Arrays
 
 
@@ -198,6 +199,7 @@ class SignInActivity : AppCompatActivity() {
 
                 val userId = userAuthenticationResult.getOrThrow().userId
                 val companyName = userAuthenticationResult.getOrThrow().companyName
+                val cleanedCompanyName = sanitizeTunnelName(companyName)
 
                 val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
@@ -222,7 +224,7 @@ class SignInActivity : AppCompatActivity() {
                 val wireguardConfig = wireguardConfigResult.getOrThrow().configurationString
                 val daemonId = wireguardConfigResult.getOrThrow().daemonId
 
-                importTunnelAndNavigate(wireguardConfig, daemonId, companyName)
+                importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
             } catch (e: ApiException) {
                 Log.e("Authentication", "An error occurred", e)
                 val view = findViewById<View>(android.R.id.content) // or some other view in your layout
@@ -269,6 +271,7 @@ class SignInActivity : AppCompatActivity() {
 
                     val userId = userAuthenticationResult.getOrThrow().userId
                     val companyName = userAuthenticationResult.getOrThrow().companyName
+                    val cleanedCompanyName = sanitizeTunnelName(companyName)
 
                     val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
 
@@ -291,7 +294,7 @@ class SignInActivity : AppCompatActivity() {
 
                     Log.d("Configuration", wireguardConfig)
 
-                    importTunnelAndNavigate(wireguardConfig, daemonId, companyName)
+                    importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
                 }
             }
 

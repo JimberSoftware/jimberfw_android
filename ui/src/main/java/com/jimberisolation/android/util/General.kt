@@ -45,3 +45,9 @@ fun isValidEmail(email: String): Boolean {
     val emailRegex = Regex("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", RegexOption.IGNORE_CASE)
     return emailRegex.matches(email)
 }
+
+fun sanitizeTunnelName(name: String): String {
+    return name
+        .replace("[^A-Za-z0-9]".toRegex(), "")
+        .take(191)
+}

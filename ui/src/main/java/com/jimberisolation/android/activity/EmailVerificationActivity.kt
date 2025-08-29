@@ -36,6 +36,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import register
+import sanitizeTunnelName
 
 class EmailVerificationActivity : AppCompatActivity() {
     private var actionBar: ActionBar? = null
@@ -177,6 +178,8 @@ class EmailVerificationActivity : AppCompatActivity() {
             try {
                 val userId = userAuthenticationResult.userId
                 val companyName = userAuthenticationResult.companyName
+                val cleanedCompanyName = sanitizeTunnelName(companyName)
+
 
                 val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
@@ -203,7 +206,7 @@ class EmailVerificationActivity : AppCompatActivity() {
 
                 Log.d("Configuration", wireguardConfig)
 
-                importTunnelAndNavigate(wireguardConfig, result.daemonId, companyName)
+                importTunnelAndNavigate(wireguardConfig, result.daemonId, cleanedCompanyName)
 
             } catch (e: Exception) {
                 Log.e("Authentication", "An error occurred", e)
