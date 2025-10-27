@@ -31,6 +31,7 @@ import com.jimberisolation.android.Application.Companion.getTunnelManager
 import com.jimberisolation.android.BuildConfig
 import com.jimberisolation.android.R
 import com.jimberisolation.android.authentication.AuthenticationType
+import com.jimberisolation.android.daemon.getDaemonInfo
 import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.TunnelImporter.importTunnel
 import com.microsoft.identity.client.AuthenticationCallback
@@ -201,10 +202,25 @@ class SignInActivity : AppCompatActivity() {
                 val companyName = userAuthenticationResult.getOrThrow().companyName
                 val cleanedCompanyName = sanitizeTunnelName(companyName)
 
-                val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
-                    loadExistingDaemon();
-                    return@launch
+                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519).getOrNull()
+                    if(result == null) {
+                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove")
+                        Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                        val tunnelManager = getTunnelManager();
+                        val existingTunnel = tunnelManager.getTunnelsOfUser()
+                        getTunnelManager().delete(existingTunnel[0])
+
+                        SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                        daemonAlreadyInStorage = null;
+                    }
+
+                    else {
+                        loadExistingDaemon();
+                        return@launch
+                    }
                 }
 
                 daemonName = daemonAlreadyInStorage?.daemonName ?: run {
@@ -273,7 +289,26 @@ class SignInActivity : AppCompatActivity() {
                     val companyName = userAuthenticationResult.getOrThrow().companyName
                     val cleanedCompanyName = sanitizeTunnelName(companyName)
 
-                    val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                    var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                    if(daemonAlreadyInStorage != null) {
+                        val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519).getOrNull()
+                        if(result == null) {
+                            Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove")
+                            Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                            val tunnelManager = getTunnelManager();
+                            val existingTunnel = tunnelManager.getTunnelsOfUser()
+                            getTunnelManager().delete(existingTunnel[0])
+
+                            SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                            daemonAlreadyInStorage = null;
+                        }
+
+                        else {
+                            loadExistingDaemon();
+                            return@launch
+                        }
+                    }
 
                     daemonName = daemonAlreadyInStorage?.daemonName ?: run {
                         showNameInputDialog() ?: return@launch

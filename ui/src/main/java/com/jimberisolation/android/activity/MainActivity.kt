@@ -6,7 +6,6 @@ package com.jimberisolation.android.activity
 
 import android.os.Bundle
 import android.content.Intent
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -20,14 +19,12 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import com.ionspin.kotlin.crypto.LibsodiumInitializer
-import com.jimberisolation.android.Application
 import com.jimberisolation.android.Application.Companion.getTunnelManager
 import com.jimberisolation.android.R
 import com.jimberisolation.android.fragment.TunnelDetailFragment
 import com.jimberisolation.android.fragment.TunnelEditorFragment
 import com.jimberisolation.android.fragment.TunnelListFragment
 import com.jimberisolation.android.model.ObservableTunnel
-import com.jimberisolation.android.model.TunnelManager
 import com.jimberisolation.android.storage.SharedStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

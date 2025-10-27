@@ -27,6 +27,7 @@ import com.jimberisolation.android.authentication.AuthenticationWithVerification
 import com.jimberisolation.android.authentication.UserAuthentication
 import com.jimberisolation.android.authentication.sendVerificationEmail
 import com.jimberisolation.android.authentication.verifyEmailWithToken
+import com.jimberisolation.android.daemon.getDaemonInfo
 import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.TunnelImporter.importTunnel
 import getDeviceHostname
@@ -181,10 +182,25 @@ class EmailVerificationActivity : AppCompatActivity() {
                 val cleanedCompanyName = sanitizeTunnelName(companyName)
 
 
-                val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
-                    loadExistingDaemon();
-                    return@launch
+                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519).getOrNull()
+                    if(result == null) {
+                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove")
+                        Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                        val tunnelManager = getTunnelManager();
+                        val existingTunnel = tunnelManager.getTunnelsOfUser()
+                        getTunnelManager().delete(existingTunnel[0])
+
+                        SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                        daemonAlreadyInStorage = null;
+                    }
+
+                    else {
+                        loadExistingDaemon();
+                        return@launch
+                    }
                 }
 
                 daemonName = daemonAlreadyInStorage?.daemonName ?: run {
