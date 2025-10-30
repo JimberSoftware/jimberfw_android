@@ -184,9 +184,9 @@ class EmailVerificationActivity : AppCompatActivity() {
 
                 var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
-                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519).getOrNull()
-                    if(result == null) {
-                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove")
+                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                    if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
                         Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
 
                         val tunnelManager = getTunnelManager();

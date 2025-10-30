@@ -78,10 +78,7 @@ suspend fun getDaemonInfo(daemonId: Number, company: String, sk: String): Result
         if (!response.isSuccessful) {
             val errorBody = response.errorBody()?.string()
             errorBody?.let {
-                val jsonObject = JSONObject(it)
-                val message = jsonObject.getString("message")
-
-                return Result.failure(Exception(message))
+                return Result.failure(Exception(response.code().toString()))
             }
         }
 

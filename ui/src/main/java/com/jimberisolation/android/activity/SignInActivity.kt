@@ -105,9 +105,6 @@ class SignInActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        println(BuildConfig.APPLICATION_ID)
-        println(Config.GOOGLE_AUTH_ID)
-
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(Config.GOOGLE_AUTH_ID)
             .requestEmail()
@@ -204,9 +201,9 @@ class SignInActivity : AppCompatActivity() {
 
                 var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
-                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519).getOrNull()
-                    if(result == null) {
-                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove")
+                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                    if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
                         Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
 
                         val tunnelManager = getTunnelManager();
@@ -243,8 +240,6 @@ class SignInActivity : AppCompatActivity() {
                 importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
             } catch (e: ApiException) {
                 Log.e("Authentication", "An error occurred", e)
-                val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                Snackbar.make(view, "Could not login. Errorcode: ${e.message}", Snackbar.LENGTH_LONG).show()
             }
         }
     }
@@ -291,9 +286,9 @@ class SignInActivity : AppCompatActivity() {
 
                     var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                     if(daemonAlreadyInStorage != null) {
-                        val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519).getOrNull()
-                        if(result == null) {
-                            Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove")
+                        val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                        if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+                            Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
                             Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
 
                             val tunnelManager = getTunnelManager();

@@ -6,6 +6,7 @@ package com.jimberisolation.android.activity
 
 import android.os.Bundle
 import android.content.Intent
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -21,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ionspin.kotlin.crypto.LibsodiumInitializer
 import com.jimberisolation.android.Application.Companion.getTunnelManager
 import com.jimberisolation.android.R
+import com.jimberisolation.android.daemon.getDaemonInfo
 import com.jimberisolation.android.fragment.TunnelDetailFragment
 import com.jimberisolation.android.fragment.TunnelEditorFragment
 import com.jimberisolation.android.fragment.TunnelListFragment
@@ -186,6 +188,27 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
             }
             return
         }
+
+        val firstTunnel = tunnels.first();
+        val daemon = SharedStorage.getInstance().getDaemonKeyPairByDaemonId(firstTunnel.getDaemonId())
+        if(daemon == null) {
+            Log.w("LOGIN_WARNING", "TUNNEL IN MANAGER BUT NOT IN SHARED STORAGE")
+            return;
+        }
+
+        val result = getDaemonInfo(daemon.daemonId, daemon.companyName,  daemon.baseEncodedSkEd25519);
+        if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+            getTunnelManager().delete(firstTunnel)
+            SharedStorage.getInstance().clearDaemonKeys(firstTunnel.getDaemonId())
+
+            withContext(Dispatchers.Main) {
+                startActivity(Intent(this@MainActivity, SignInActivity::class.java))
+                finish()
+            }
+            return
+
+        }
+
 
         withContext(Dispatchers.Main) {
             supportFragmentManager.commit {

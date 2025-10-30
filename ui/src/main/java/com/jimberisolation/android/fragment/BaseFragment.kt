@@ -111,7 +111,11 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
 
                     val networkController = getDaemonConnectionData(daemonId, kp!!.companyName, kp.baseEncodedSkEd25519)
                     if(!networkController.isSuccess) {
+                        Toast.makeText(activity, "Daemon information could not be retrieved, please restart app", Toast.LENGTH_SHORT).show()
+
+                        tunnel.setStateAsync(Tunnel.State.UP)
                         tunnel.setStateAsync(Tunnel.State.DOWN)
+
                         return@launch;
                     }
 
