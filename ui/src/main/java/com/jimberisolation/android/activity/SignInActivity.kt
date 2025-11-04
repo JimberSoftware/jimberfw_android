@@ -93,7 +93,7 @@ class SignInActivity : AppCompatActivity() {
             val signInParameters = SignInParameters.builder()
                 .withActivity(this)
                 .withLoginHint(null)
-                .withScopes(Arrays.asList("f1373772-6623-4090-9204-3cb04b9d46c9/.default"))
+                .withScopes(Arrays.asList("User.Read", "openid", "profile", "email"))
                 .withCallback(getAuthInteractiveCallback())
                 .build()
 
@@ -270,10 +270,20 @@ class SignInActivity : AppCompatActivity() {
     private fun getAuthInteractiveCallback(): AuthenticationCallback {
         return object : AuthenticationCallback {
             override fun onSuccess(authenticationResult: IAuthenticationResult) {
-                val token = authenticationResult.accessToken
+                val token = authenticationResult.account.idToken
                 lifecycleScope.launch {
-                    val userAuthenticationResult = authenticateUser(token, AuthenticationType.Microsoft);
+                    val userAuthenticationResult = authenticateUser(token!!, AuthenticationType.Microsoft);
                     if(userAuthenticationResult.isFailure) {
+                        mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+                            override fun onSignOut() {
+                                println("Successfully signed out.")
+                            }
+
+                            override fun onError(exception: MsalException) {
+                                exception.printStackTrace()
+                            }
+                        })
+
                         val userAuthenticationException = userAuthenticationResult.exceptionOrNull()
                         val view = findViewById<View>(android.R.id.content) // or some other view in your layout
                         Snackbar.make(view, userAuthenticationException?.message.toString(), Snackbar.LENGTH_LONG).show()
@@ -329,6 +339,7 @@ class SignInActivity : AppCompatActivity() {
             }
 
             override fun onError(exception: MsalException) {
+                Toast.makeText(this@SignInActivity, exception.message, Toast.LENGTH_SHORT).show()
                 Log.e("Error", "Error", exception)
             }
 
