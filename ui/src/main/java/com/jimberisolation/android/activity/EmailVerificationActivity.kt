@@ -27,6 +27,7 @@ import com.jimberisolation.android.authentication.AuthenticationWithVerification
 import com.jimberisolation.android.authentication.UserAuthentication
 import com.jimberisolation.android.authentication.sendVerificationEmail
 import com.jimberisolation.android.authentication.verifyEmailWithToken
+import com.jimberisolation.android.daemon.getDaemonInfo
 import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.TunnelImporter.importTunnel
 import getDeviceHostname
@@ -36,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import register
+import sanitizeTunnelName
 
 class EmailVerificationActivity : AppCompatActivity() {
     private var actionBar: ActionBar? = null
@@ -176,11 +178,29 @@ class EmailVerificationActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val userId = userAuthenticationResult.userId
+                val companyName = userAuthenticationResult.companyName
+                val cleanedCompanyName = sanitizeTunnelName(companyName)
 
-                val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+
+                var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
-                    loadExistingDaemon();
-                    return@launch
+                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                    if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
+                        Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                        val tunnelManager = getTunnelManager();
+                        val existingTunnel = tunnelManager.getTunnelsOfUser()
+                        getTunnelManager().delete(existingTunnel[0])
+
+                        SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                        daemonAlreadyInStorage = null;
+                    }
+
+                    else {
+                        loadExistingDaemon();
+                        return@launch
+                    }
                 }
 
                 daemonName = daemonAlreadyInStorage?.daemonName ?: run {
@@ -202,7 +222,7 @@ class EmailVerificationActivity : AppCompatActivity() {
 
                 Log.d("Configuration", wireguardConfig)
 
-                importTunnelAndNavigate(wireguardConfig, result.daemonId)
+                importTunnelAndNavigate(wireguardConfig, result.daemonId, cleanedCompanyName)
 
             } catch (e: Exception) {
                 Log.e("Authentication", "An error occurred", e)
@@ -220,12 +240,12 @@ class EmailVerificationActivity : AppCompatActivity() {
     }
 
 
-    private suspend fun importTunnelAndNavigate(result: String, daemonId: Int) {
+    private suspend fun importTunnelAndNavigate(result: String, daemonId: Int, companyName: String) {
         val manager = getTunnelManager()
 
         val alreadyExistingTunnel = manager.getTunnels().find { it.getDaemonId() == daemonId }
         if(alreadyExistingTunnel == null) {
-            importTunnel(result, daemonId, daemonName!!) { }
+            importTunnel(result, daemonId, daemonName!!, companyName) { }
         }
 
         val intent = Intent(this, MainActivity::class.java)

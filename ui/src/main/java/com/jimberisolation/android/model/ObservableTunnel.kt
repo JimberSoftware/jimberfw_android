@@ -25,9 +25,12 @@ class ObservableTunnel internal constructor(
     private var name: String,
     private var daemonId: Int,
     private var userId: Int,
+    private var deviceName: String,
     config: Config?,
     state: Tunnel.State
 ) : BaseObservable(), Keyed<String>, Tunnel {
+    private var isApproved = false;
+
     override val key
         get() = name
 
@@ -40,6 +43,17 @@ class ObservableTunnel internal constructor(
     @Bindable
     fun getUserId() = userId
 
+    @Bindable
+    fun isApproved() = isApproved
+
+    @Bindable
+    fun getDeviceName() = deviceName
+
+    @Bindable
+    fun setIsApproved(isApproved: Boolean) {
+        this.isApproved = isApproved
+    }
+
     suspend fun setNameAsync(name: String): String = withContext(Dispatchers.Main.immediate) {
         if (name != this@ObservableTunnel.name)
             manager.setTunnelName(this@ObservableTunnel, name)
@@ -47,8 +61,8 @@ class ObservableTunnel internal constructor(
             this@ObservableTunnel.name
     }
 
-    fun onNameChanged(name: String): String {
-        this.name = name
+    fun onDeviceNameChanged(name: String): String {
+        this.deviceName = name
         notifyPropertyChanged(BR.name)
         return name
     }

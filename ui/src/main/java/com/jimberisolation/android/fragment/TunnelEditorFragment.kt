@@ -119,7 +119,7 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
                 binding!!.config!!.resolve()
             } catch (e: Throwable) {
                 val error = ErrorMessages[e]
-                val tunnelName = if (tunnel == null) binding!!.name else tunnel!!.name
+                val tunnelName = if (tunnel == null) binding!!.deviceName else tunnel!!.name
                 val message = getString(R.string.config_save_error, tunnelName, error)
                 Log.e(TAG, message, e)
                 Snackbar.make(binding!!.mainContainer, error, Snackbar.LENGTH_LONG).show()
@@ -128,10 +128,10 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
             val activity = requireActivity()
             activity.lifecycleScope.launch {
                 when {
-                    tunnel!!.name != binding!!.name -> {
-                        Log.d(TAG, "Attempting to rename tunnel to " + binding!!.name)
+                    tunnel!!.getDeviceName() != binding!!.deviceName -> {
+                        Log.d(TAG, "Attempting to rename tunnel to " + binding!!.deviceName)
                         try {
-                            tunnel!!.setNameAsync(binding!!.name!!)
+                            tunnel!!.setNameAsync(binding!!.deviceName!!)
                             onTunnelRenamed(tunnel!!, newConfig, null)
                         } catch (e: Throwable) {
                             onTunnelRenamed(tunnel!!, newConfig, e)
@@ -201,7 +201,7 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
         if (binding == null) return
         binding!!.config = ConfigProxy()
         if (tunnel != null) {
-            binding!!.name = tunnel!!.name
+            binding!!.deviceName = tunnel!!.getDeviceName()
             lifecycleScope.launch {
                 try {
                     onConfigLoaded(tunnel!!.getConfigAsync())
@@ -209,7 +209,7 @@ class TunnelEditorFragment : BaseFragment(), MenuProvider {
                 }
             }
         } else {
-            binding!!.name = ""
+            binding!!.deviceName = ""
         }
     }
 

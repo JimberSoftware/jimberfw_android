@@ -24,10 +24,7 @@ suspend fun createDaemon(userId: Int, company: String, daemonData: CreateDaemonA
                 val jsonObject = JSONObject(it)
                 val message = jsonObject.getString("message")
 
-                val jsonArray = JSONArray(message)
-                val firstEl = jsonArray.get(0)
-
-                return Result.failure(Exception(firstEl.toString()))
+                return Result.failure(Exception(message))
             }
         }
 
@@ -62,6 +59,37 @@ suspend fun deleteDaemon(daemonId: Number, company: String, sk: String): Result<
 
         val result = response.body() ?: return Result.failure(NullPointerException("Response body is null"))
         val daemon =  DeletedDaemon(daemonId = result.id)
+
+        Result.success(daemon)
+    } catch (e: Exception) {
+        Log.e("CREATE_DAEMON", "ERROR IN DELETE DAEMON", e)
+        Result.failure(e)
+    }
+}
+
+suspend fun getDaemonInfo(daemonId: Number, company: String, sk: String): Result<DaemonInfo> {
+    return try {
+        val timestampInSeconds = (System.currentTimeMillis() / 1000)
+        val timestampBuffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(timestampInSeconds).array()
+
+        val authorizationHeader = generateSignedMessage(timestampBuffer, sk);
+
+        val response = ApiClient.apiService.getDaemonInformation(daemonId, company, authorizationHeader)
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string()
+            errorBody?.let {
+                return Result.failure(Exception(response.code().toString()))
+            }
+        }
+
+        val result = response.body() ?: return Result.failure(NullPointerException("Response body is null"))
+
+        var isApproved = false;
+        if(result.approvalStatus == "approved") {
+            isApproved = true;
+        }
+
+        val daemon =  DaemonInfo(daemonId = result.id, name = result.name, isApproved = isApproved)
 
         Result.success(daemon)
     } catch (e: Exception) {

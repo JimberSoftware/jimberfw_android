@@ -31,6 +31,7 @@ import com.jimberisolation.android.Application.Companion.getTunnelManager
 import com.jimberisolation.android.BuildConfig
 import com.jimberisolation.android.R
 import com.jimberisolation.android.authentication.AuthenticationType
+import com.jimberisolation.android.daemon.getDaemonInfo
 import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.TunnelImporter.importTunnel
 import com.microsoft.identity.client.AuthenticationCallback
@@ -46,6 +47,7 @@ import isValidMobileHostname
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import register
+import sanitizeTunnelName
 import java.util.Arrays
 
 
@@ -91,7 +93,7 @@ class SignInActivity : AppCompatActivity() {
             val signInParameters = SignInParameters.builder()
                 .withActivity(this)
                 .withLoginHint(null)
-                .withScopes(Arrays.asList("f1373772-6623-4090-9204-3cb04b9d46c9/.default"))
+                .withScopes(Arrays.asList("User.Read", "openid", "profile", "email"))
                 .withCallback(getAuthInteractiveCallback())
                 .build()
 
@@ -102,9 +104,6 @@ class SignInActivity : AppCompatActivity() {
             val intent = Intent(this, EmailRegistrationActivity::class.java)
             startActivity(intent)
         }
-
-        println(BuildConfig.APPLICATION_ID)
-        println(Config.GOOGLE_AUTH_ID)
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(Config.GOOGLE_AUTH_ID)
@@ -197,11 +196,28 @@ class SignInActivity : AppCompatActivity() {
                 }
 
                 val userId = userAuthenticationResult.getOrThrow().userId
+                val companyName = userAuthenticationResult.getOrThrow().companyName
+                val cleanedCompanyName = sanitizeTunnelName(companyName)
 
-                val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
                 if(daemonAlreadyInStorage != null) {
-                    loadExistingDaemon();
-                    return@launch
+                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                    if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
+                        Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                        val tunnelManager = getTunnelManager();
+                        val existingTunnel = tunnelManager.getTunnelsOfUser()
+                        getTunnelManager().delete(existingTunnel[0])
+
+                        SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                        daemonAlreadyInStorage = null;
+                    }
+
+                    else {
+                        loadExistingDaemon();
+                        return@launch
+                    }
                 }
 
                 daemonName = daemonAlreadyInStorage?.daemonName ?: run {
@@ -221,11 +237,9 @@ class SignInActivity : AppCompatActivity() {
                 val wireguardConfig = wireguardConfigResult.getOrThrow().configurationString
                 val daemonId = wireguardConfigResult.getOrThrow().daemonId
 
-                importTunnelAndNavigate(wireguardConfig, daemonId)
+                importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
             } catch (e: ApiException) {
                 Log.e("Authentication", "An error occurred", e)
-                val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                Snackbar.make(view, "Could not login. Errorcode: ${e.message}", Snackbar.LENGTH_LONG).show()
             }
         }
     }
@@ -237,13 +251,13 @@ class SignInActivity : AppCompatActivity() {
         finish()
     }
 
-    private suspend fun importTunnelAndNavigate(configResult: String, daemonId: Int) {
+    private suspend fun importTunnelAndNavigate(configResult: String, daemonId: Int, companyName: String) {
         val manager = getTunnelManager()
 
         val alreadyExistingTunnel = manager.getTunnels().find { it.getDaemonId() == daemonId }
 
         if(alreadyExistingTunnel == null) {
-            importTunnel(configResult, daemonId, daemonName!!) { }
+            importTunnel(configResult, daemonId, daemonName!!, companyName) { }
         }
 
         val intent = Intent(this, MainActivity::class.java)
@@ -256,10 +270,20 @@ class SignInActivity : AppCompatActivity() {
     private fun getAuthInteractiveCallback(): AuthenticationCallback {
         return object : AuthenticationCallback {
             override fun onSuccess(authenticationResult: IAuthenticationResult) {
-                val token = authenticationResult.accessToken
+                val token = authenticationResult.account.idToken
                 lifecycleScope.launch {
-                    val userAuthenticationResult = authenticateUser(token, AuthenticationType.Microsoft);
+                    val userAuthenticationResult = authenticateUser(token!!, AuthenticationType.Microsoft);
                     if(userAuthenticationResult.isFailure) {
+                        mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+                            override fun onSignOut() {
+                                println("Successfully signed out.")
+                            }
+
+                            override fun onError(exception: MsalException) {
+                                exception.printStackTrace()
+                            }
+                        })
+
                         val userAuthenticationException = userAuthenticationResult.exceptionOrNull()
                         val view = findViewById<View>(android.R.id.content) // or some other view in your layout
                         Snackbar.make(view, userAuthenticationException?.message.toString(), Snackbar.LENGTH_LONG).show()
@@ -267,7 +291,29 @@ class SignInActivity : AppCompatActivity() {
                     }
 
                     val userId = userAuthenticationResult.getOrThrow().userId
-                    val daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                    val companyName = userAuthenticationResult.getOrThrow().companyName
+                    val cleanedCompanyName = sanitizeTunnelName(companyName)
+
+                    var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+                    if(daemonAlreadyInStorage != null) {
+                        val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                        if(result.isFailure && result.exceptionOrNull()?.message == "403") {
+                            Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
+                            Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                            val tunnelManager = getTunnelManager();
+                            val existingTunnel = tunnelManager.getTunnelsOfUser()
+                            getTunnelManager().delete(existingTunnel[0])
+
+                            SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                            daemonAlreadyInStorage = null;
+                        }
+
+                        else {
+                            loadExistingDaemon();
+                            return@launch
+                        }
+                    }
 
                     daemonName = daemonAlreadyInStorage?.daemonName ?: run {
                         showNameInputDialog() ?: return@launch
@@ -288,11 +334,12 @@ class SignInActivity : AppCompatActivity() {
 
                     Log.d("Configuration", wireguardConfig)
 
-                    importTunnelAndNavigate(wireguardConfig, daemonId)
+                    importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
                 }
             }
 
             override fun onError(exception: MsalException) {
+                Toast.makeText(this@SignInActivity, exception.message, Toast.LENGTH_SHORT).show()
                 Log.e("Error", "Error", exception)
             }
 
