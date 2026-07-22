@@ -17,7 +17,7 @@ plugins {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     buildFeatures {
         buildConfig = true
         dataBinding = true
@@ -27,7 +27,7 @@ android {
     defaultConfig {
         applicationId = pkg
         minSdk = 30
-        targetSdk = 35
+        targetSdk = 36
         versionCode = providers.gradleProperty("wireguardVersionCode").get().toInt()
         versionName = providers.gradleProperty("wireguardVersionName").get()
         buildConfigField("int", "MIN_SDK_VERSION", minSdk.toString())
