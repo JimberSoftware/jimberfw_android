@@ -17,6 +17,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.android.material.color.DynamicColors
+import com.ionspin.kotlin.crypto.LibsodiumInitializer
 import com.jimberisolation.android.backend.Backend
 import com.jimberisolation.android.backend.GoBackend
 import com.jimberisolation.android.backend.WgQuickBackend
@@ -86,6 +87,9 @@ class Application : android.app.Application() {
     override fun onCreate() {
         Log.i(TAG, USER_AGENT)
         super.onCreate()
+        // Initialize once per process, before any activity can create or convert device keys.
+        // The binding rejects sodium_init's "already initialized" result on repeated calls.
+        LibsodiumInitializer.initializeWithCallback { }
         DynamicColors.applyToActivitiesIfAvailable(this)
 
         rootShell = RootShell(applicationContext)

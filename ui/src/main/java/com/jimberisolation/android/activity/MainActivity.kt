@@ -4,7 +4,10 @@
  */
 package com.jimberisolation.android.activity
 
+import com.google.android.material.snackbar.Snackbar
 import android.os.Bundle
+import com.jimberisolation.android.api.hasHttpStatus
+import com.jimberisolation.android.api.userFacingMessage
 import android.content.Intent
 import android.util.Log
 import android.view.Menu
@@ -19,7 +22,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
-import com.ionspin.kotlin.crypto.LibsodiumInitializer
 import com.jimberisolation.android.Application.Companion.getTunnelManager
 import com.jimberisolation.android.R
 import com.jimberisolation.android.daemon.getDaemonInfo
@@ -73,13 +75,6 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
-
-        var isInitialized = false;
-        LibsodiumInitializer.initializeWithCallback {
-            isInitialized = true;
-        }
-
-        while(!isInitialized) { }
 
         spinner = findViewById(R.id.loading_spinner)
         detailContainer = findViewById(R.id.detail_container)
@@ -197,8 +192,8 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         }
 
         val result = getDaemonInfo(daemon.daemonId, daemon.companyName,  daemon.baseEncodedSkEd25519);
-        if(result.isFailure && result.exceptionOrNull()?.message == "403") {
-            getTunnelManager().delete(firstTunnel)
+        if(result.isFailure && result.exceptionOrNull().hasHttpStatus(403, 404)) {
+            getTunnelManager().deleteState(firstTunnel)
             SharedStorage.getInstance().clearDaemonKeys(firstTunnel.getDaemonId())
 
             withContext(Dispatchers.Main) {
@@ -209,6 +204,10 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
 
         }
 
+
+        if (result.isFailure) {
+            Snackbar.make(findViewById(android.R.id.content), result.exceptionOrNull().userFacingMessage(), Snackbar.LENGTH_LONG).show()
+        }
 
         withContext(Dispatchers.Main) {
             supportFragmentManager.commit {

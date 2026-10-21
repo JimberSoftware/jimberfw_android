@@ -16,7 +16,10 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import com.jimberisolation.android.R
+import com.jimberisolation.android.api.fieldError
+import com.jimberisolation.android.api.userFacingMessage
 import com.jimberisolation.android.authentication.sendVerificationEmail
 import isValidEmail
 import kotlinx.coroutines.launch
@@ -42,6 +45,7 @@ class EmailRegistrationActivity : AppCompatActivity() {
 
         val emailInput = findViewById<EditText>(R.id.email_input)
         val submitButton = findViewById<Button>(R.id.proceed)
+        var isSubmitting = false
         submitButton.isEnabled = false;
         submitButton.setBackgroundColor(Color.GRAY)
 
@@ -51,6 +55,7 @@ class EmailRegistrationActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
             override fun afterTextChanged(s: Editable?) {
+                emailInput.error = null
                 val email = s?.toString() ?: ""
                 val isValid = isValidEmail(email)
 
@@ -59,21 +64,37 @@ class EmailRegistrationActivity : AppCompatActivity() {
                 )
 
 
-                submitButton.isEnabled = isValid
+                submitButton.isEnabled = isValid && !isSubmitting
             }
         })
 
-        submitButton?.setOnClickListener {
-            val emailAddress = emailInput.text.toString()
-
+        submitButton.setOnClickListener {
+            val emailAddress = emailInput.text.toString().trim()
+            isSubmitting = true
+            submitButton.isEnabled = false
+            emailInput.isEnabled = false
+            emailInput.error = null
             lifecycleScope.launch {
-                sendVerificationEmail(emailAddress)
+                try {
+                    val result = sendVerificationEmail(emailAddress)
+                    if (result.getOrNull() != true) {
+                        val error = result.exceptionOrNull()
+                        val fieldMessage = error.fieldError("email")
+                        if (fieldMessage != null) {
+                            emailInput.error = fieldMessage
+                        } else {
+                            Snackbar.make(emailInput, error.userFacingMessage(), Snackbar.LENGTH_LONG).show()
+                        }
+                        return@launch
+                    }
+                    startActivity(Intent(this@EmailRegistrationActivity, EmailVerificationActivity::class.java)
+                        .putExtra("EMAIL", emailAddress))
+                } finally {
+                    isSubmitting = false
+                    emailInput.isEnabled = true
+                    submitButton.isEnabled = isValidEmail(emailInput.text.toString())
+                }
             }
-
-            val intent = Intent(this, EmailVerificationActivity::class.java)
-            intent.putExtra("EMAIL", emailAddress)
-
-            startActivity(intent)
         }
 
         backPressedCallback = onBackPressedDispatcher.addCallback(this) { handleBackPressed() }

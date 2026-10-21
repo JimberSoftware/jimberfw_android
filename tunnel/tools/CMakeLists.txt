@@ -12,7 +12,7 @@ add_compile_options(-Wall -Werror)
 
 # Function to apply max-page-size linker option
 function(add_max_page_size target_name)
-    target_link_options(${target_name} PRIVATE "-Wl,-z,max-page-size=16384")
+    target_link_options(${target_name} PRIVATE "-Wl,-z,max-page-size=16384" "-Wl,-z,common-page-size=16384")
 endfunction()
 
 # libwg-quick.so

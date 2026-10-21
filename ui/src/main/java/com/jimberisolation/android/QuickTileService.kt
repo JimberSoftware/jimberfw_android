@@ -52,23 +52,18 @@ class QuickTileService : TileService() {
     }
 
     override fun onClick() {
+        updateTile()
         when (val tunnel = tunnel) {
-            null -> {
-                val intent = Intent(this, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    startActivityAndCollapse(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    startActivityAndCollapse(intent)
-                }
-            }
+            null -> openMainActivity()
             else -> {
                 unlockAndRun {
                     applicationScope.launch {
                         try {
                             tunnel.setStateAsync(Tunnel.State.TOGGLE)
                             updateTile()
+                        } catch (_: SecurityException) {
+                            updateTile()
+                            openMainActivity()
                         } catch (_: Throwable) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !Settings.canDrawOverlays(this@QuickTileService)) {
                                 val permissionIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
@@ -83,6 +78,17 @@ class QuickTileService : TileService() {
                     }
                 }
             }
+        }
+    }
+
+    private fun openMainActivity() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startActivityAndCollapse(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE))
+        } else {
+            @Suppress("DEPRECATION")
+            startActivityAndCollapse(intent)
         }
     }
 
@@ -135,7 +141,8 @@ class QuickTileService : TileService() {
 
     private fun updateTile() {
         // Update the tunnel.
-        val newTunnel = Application.getTunnelManager().lastUsedTunnel
+        val manager = Application.getTunnelManager()
+        val newTunnel = manager.lastUsedTunnel?.takeIf { manager.canControlTunnel(it) }
         if (newTunnel != tunnel) {
             tunnel?.removeOnPropertyChangedCallback(onStateChangedCallback)
             tunnel = newTunnel

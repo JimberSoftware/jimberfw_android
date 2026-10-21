@@ -18,7 +18,7 @@ class SharedStoragePreference(context: Context, attrs: AttributeSet?) : Preferen
     override fun onClick() {
         lifecycleScope.launch {
             try {
-                val data = SharedStorage.getInstance().getAll();
+                val data = SharedStorage.getInstance().getRedactedData()
 
                 // Convert the map to JSON
                 val jsonData = Gson().toJson(data)

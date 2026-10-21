@@ -1,5 +1,8 @@
 package com.jimberisolation.android.activity
 
+import com.jimberisolation.android.api.hasHttpStatus
+import com.jimberisolation.android.api.fieldError
+import com.jimberisolation.android.api.userFacingMessage
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -32,9 +35,8 @@ import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.TunnelImporter.importTunnel
 import getDeviceHostname
 import isValidMobileHostname
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import register
 import sanitizeTunnelName
@@ -61,7 +63,10 @@ class EmailVerificationActivity : AppCompatActivity() {
 
         backPressedCallback = onBackPressedDispatcher.addCallback(this) { handleBackPressed() }
 
-        val email = intent.getStringExtra("EMAIL")
+        val email = intent.getStringExtra("EMAIL") ?: run {
+            finish()
+            return
+        }
 
         val snackView = findViewById<View>(android.R.id.content)
 
@@ -77,48 +82,44 @@ class EmailVerificationActivity : AppCompatActivity() {
         val textView: TextView = findViewById(R.id.resend_email)
 
         textView.setOnClickListener {
-            // Launch a coroutine in the main scope
-            CoroutineScope(Dispatchers.Main).launch {
-                // Call the suspending function
-                val result = sendVerificationEmail(email.toString())
-
-                if (result.isFailure) {
-                    Snackbar.make(snackView, "Something went wrong with resending email, please contact support", Snackbar.LENGTH_LONG).show()
-                    return@launch // Return from the coroutine if there's a failure
+            textView.isEnabled = false
+            lifecycleScope.launch {
+                try {
+                    val result = sendVerificationEmail(email)
+                    if (result.getOrNull() != true) {
+                        Snackbar.make(snackView, result.exceptionOrNull().userFacingMessage(), Snackbar.LENGTH_LONG).show()
+                        return@launch
+                    }
+                    Snackbar.make(snackView, "Email successfully resent", Snackbar.LENGTH_LONG).show()
+                } finally {
+                    textView.isEnabled = true
                 }
-
-                Snackbar.make(snackView, "Email successfully resent", Snackbar.LENGTH_LONG).show()
             }
         }
 
-        findViewById<View>(R.id.proceed)?.setOnClickListener {
-            var verificationCode = ""
-
-            for (i in 1..7) {
-                val resID = resources.getIdentifier("token_digit_$i", "id", packageName)
-                val editText = findViewById<EditText>(resID)
-
-                if (editText != null) {
-                    verificationCode += editText.text.toString()
-                }
-            }
-
-            if(verificationCode.length != 6) {
+        val submitButton = findViewById<View>(R.id.proceed)
+        submitButton.setOnClickListener {
+            val verificationCode = tokenInputs.joinToString("") { it.text.toString() }
+            val token = verificationCode.toIntOrNull()
+            if (verificationCode.length != 6 || token == null) {
                 errorTextView.text = "Please fill in a valid verification code"
                 return@setOnClickListener;
             }
 
-            CoroutineScope(Dispatchers.Main).launch {
-                val verifyResult = verifyEmailWithToken(AuthenticationWithVerificationCodeApiRequest(email.toString(), verificationCode.toInt()))
-                if(verifyResult.isFailure) {
-                    errorTextView.text = "Unauthorized"
-
-                    return@launch;
+            submitButton.isEnabled = false
+            errorTextView.text = ""
+            lifecycleScope.launch {
+                try {
+                    val verifyResult = verifyEmailWithToken(AuthenticationWithVerificationCodeApiRequest(email, token))
+                    if (verifyResult.isFailure) {
+                        val error = verifyResult.exceptionOrNull()
+                        errorTextView.text = error.fieldError("token") ?: error.fieldError("email") ?: error.userFacingMessage()
+                        return@launch
+                    }
+                    handleEmailVerification(verifyResult.getOrThrow())
+                } finally {
+                    submitButton.isEnabled = true
                 }
-
-                errorTextView.text = ""
-                val userAuthenticationResult = verifyResult.getOrThrow();
-                handleEmailVerification(userAuthenticationResult);
             }
         }
 
@@ -172,63 +173,69 @@ class EmailVerificationActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleEmailVerification(userAuthenticationResult: UserAuthentication) {
+    private suspend fun handleEmailVerification(userAuthenticationResult: UserAuthentication) {
         if(daemonName == null) return;
 
-        lifecycleScope.launch {
-            try {
-                val userId = userAuthenticationResult.userId
-                val companyName = userAuthenticationResult.companyName
-                val cleanedCompanyName = sanitizeTunnelName(companyName)
+        try {
+            val userId = userAuthenticationResult.userId
+            val companyName = userAuthenticationResult.companyName
+            val cleanedCompanyName = sanitizeTunnelName(companyName)
 
 
-                var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
-                if(daemonAlreadyInStorage != null) {
-                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
-                    if(result.isFailure && result.exceptionOrNull()?.message == "403") {
-                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
-                        Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+            var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+            if(daemonAlreadyInStorage != null) {
+                val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+                if(result.isFailure && result.exceptionOrNull().hasHttpStatus(403, 404)) {
+                    Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
+                    Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
 
-                        val tunnelManager = getTunnelManager();
-                        val existingTunnel = tunnelManager.getTunnelsOfUser()
-                        getTunnelManager().delete(existingTunnel[0])
+                    val tunnelManager = getTunnelManager();
+                    val existingTunnel = tunnelManager.getTunnels().firstOrNull { it.getDaemonId() == daemonAlreadyInStorage?.daemonId }
+                    existingTunnel?.let { tunnelManager.deleteState(it) }
 
-                        SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
-                        daemonAlreadyInStorage = null;
+                    SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                    daemonAlreadyInStorage = null;
+                }
+
+                else {
+                    if (result.isFailure) {
+                        Snackbar.make(findViewById(android.R.id.content), result.exceptionOrNull().userFacingMessage(), Snackbar.LENGTH_LONG).show()
+                        return
                     }
-
-                    else {
-                        loadExistingDaemon();
-                        return@launch
-                    }
+                    loadExistingDaemon();
+                    return
                 }
-
-                daemonName = daemonAlreadyInStorage?.daemonName ?: run {
-                    showNameInputDialog() ?: return@launch
-                }
-
-                val wireguardConfigResult = register(userAuthenticationResult, daemonName!!)
-
-                if (wireguardConfigResult.isFailure) {
-                    val createDaemonException = wireguardConfigResult.exceptionOrNull()
-                    val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                    Snackbar.make(view, createDaemonException?.message.toString(), Snackbar.LENGTH_LONG).show()
-                    return@launch
-                }
-
-                val result = wireguardConfigResult.getOrThrow()
-
-                val wireguardConfig = result.configurationString
-
-                Log.d("Configuration", wireguardConfig)
-
-                importTunnelAndNavigate(wireguardConfig, result.daemonId, cleanedCompanyName)
-
-            } catch (e: Exception) {
-                Log.e("Authentication", "An error occurred", e)
-                val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                Snackbar.make(view, "An error occurred: ${e.message}", Snackbar.LENGTH_LONG).show()
             }
+
+            daemonName = daemonAlreadyInStorage?.daemonName ?: run {
+                showNameInputDialog() ?: return
+            }
+
+            var wireguardConfigResult = register(userAuthenticationResult, daemonName!!)
+            while (wireguardConfigResult.exceptionOrNull().fieldError("name") != null) {
+                daemonName = showNameInputDialog(wireguardConfigResult.exceptionOrNull().fieldError("name")) ?: return
+                wireguardConfigResult = register(userAuthenticationResult, daemonName!!)
+            }
+
+            if (wireguardConfigResult.isFailure) {
+                val createDaemonException = wireguardConfigResult.exceptionOrNull()
+                val view = findViewById<View>(android.R.id.content) // or some other view in your layout
+                Snackbar.make(view, createDaemonException.userFacingMessage(), Snackbar.LENGTH_LONG).show()
+                return
+            }
+
+            val result = wireguardConfigResult.getOrThrow()
+
+            val wireguardConfig = result.configurationString
+
+            importTunnelAndNavigate(wireguardConfig, result.daemonId, cleanedCompanyName)
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e("Authentication", "An error occurred", e)
+            val view = findViewById<View>(android.R.id.content) // or some other view in your layout
+            Snackbar.make(view, e.userFacingMessage(), Snackbar.LENGTH_LONG).show()
         }
     }
 
@@ -258,7 +265,7 @@ class EmailVerificationActivity : AppCompatActivity() {
         finish()
     }
 
-    private suspend fun showNameInputDialog(): String? {
+    private suspend fun showNameInputDialog(serverError: String? = null): String? {
         // Create a deferred result to await the input
         val result = CompletableDeferred<String?>()
 
@@ -275,7 +282,8 @@ class EmailVerificationActivity : AppCompatActivity() {
         val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
         val btnSubmit = dialogView.findViewById<Button>(R.id.btnSubmit)
 
-        nameInput.setText(daemonName);
+        nameInput.setText(daemonName)
+        nameInput.error = serverError
 
         // Create the dialog
         val dialog = dialogBuilder.create()
@@ -304,7 +312,11 @@ class EmailVerificationActivity : AppCompatActivity() {
         dialog.show()
 
         // Await the result before proceeding
-        return result.await()
+        return try {
+            result.await()
+        } finally {
+            dialog.dismiss()
+        }
     }
 
 }

@@ -45,6 +45,7 @@ import com.jimberisolation.android.databinding.TvActivityBinding
 import com.jimberisolation.android.databinding.TvFileListItemBinding
 import com.jimberisolation.android.databinding.TvTunnelListItemBinding
 import com.jimberisolation.android.model.ObservableTunnel
+import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.ErrorMessages
 import com.jimberisolation.android.util.QuantityFormatter
 import com.jimberisolation.android.util.TunnelImporter
@@ -96,7 +97,7 @@ class TvMainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = TvActivityBinding.inflate(layoutInflater)
         lifecycleScope.launch {
-            binding.tunnels = Application.getTunnelManager().getTunnels()
+            binding.tunnels = Application.getTunnelManager().getTunnelsOfUser()
             binding.tunnelList.requestFocus()
         }
         binding.isDeleting = isDeleting
@@ -116,6 +117,7 @@ class TvMainActivity : AppCompatActivity() {
                         if (isDeleting.get()) {
                             try {
                                 item.deleteAsync()
+                                this@TvMainActivity.binding.tunnels = Application.getTunnelManager().getTunnelsOfUser()
                                 if (this@TvMainActivity.binding.tunnels?.isEmpty() != false)
                                     isDeleting.set(false)
                             } catch (e: Throwable) {
@@ -169,6 +171,18 @@ class TvMainActivity : AppCompatActivity() {
     }
 
     private var pendingNavigation: File? = null
+
+    override fun onResume() {
+        super.onResume()
+        if (SharedStorage.getInstance().getCurrentUser() == null) {
+            startActivity(Intent(this, SignInActivity::class.java))
+            finish()
+            return
+        }
+        lifecycleScope.launch {
+            binding.tunnels = Application.getTunnelManager().getTunnelsOfUser()
+        }
+    }
     private val permissionRequestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         val to = pendingNavigation
         if (it && to != null)
