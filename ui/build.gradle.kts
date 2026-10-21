@@ -18,6 +18,9 @@ plugins {
 
 android {
     compileSdk = 36
+    ndkVersion = "28.2.13676358"
+    // Use -PandroidTestBuildType=release to exercise the signed, shrunk app.
+    testBuildType = providers.gradleProperty("androidTestBuildType").orElse("debug").get()
     buildFeatures {
         buildConfig = true
         dataBinding = true
@@ -27,6 +30,7 @@ android {
     defaultConfig {
         applicationId = pkg
         minSdk = 30
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         targetSdk = 36
         versionCode = providers.gradleProperty("wireguardVersionCode").get().toInt()
         versionName = providers.gradleProperty("wireguardVersionName").get()
@@ -103,6 +107,14 @@ android {
 }
 
 dependencies {
+    testImplementation(libs.junit)
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation("com.squareup.okhttp3:okhttp-tls:4.12.0")
+    // Required by okhttp-tls when the release instrumentation APK is shrunk.
+    androidTestImplementation("org.codehaus.mojo:animal-sniffer-annotations:1.23")
     implementation(project(":tunnel"))
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.annotation)
@@ -120,23 +132,17 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     coreLibraryDesugaring(libs.desugarJdkLibs)
 
-    implementation("com.google.android.gms:play-services-auth:20.5.0")
-    implementation("com.microsoft.identity.client:msal:4.9.0") {
-        exclude(group = "io.opentelemetry")
-    }
-    implementation("io.opentelemetry:opentelemetry-api:1.18.0")
-    implementation("io.opentelemetry:opentelemetry-context:1.18.0")
-    implementation("io.ktor:ktor-client-core:2.2.3") // Check for the latest version
-    implementation("io.ktor:ktor-client-cio:2.2.3")  // CIO engine for making requests
-    implementation("io.ktor:ktor-client-json:2.2.3")
-    implementation("io.ktor:ktor-client-serialization:2.2.3")
+    implementation("androidx.credentials:credentials:1.6.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
+    implementation("com.microsoft.identity.client:msal:8.5.0")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
-    implementation("com.ionspin.kotlin:multiplatform-crypto-libsodium-bindings:0.9.2")
+    implementation("com.ionspin.kotlin:multiplatform-crypto-libsodium-bindings:0.9.5")
 
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.2")
-    implementation("com.squareup.okhttp3:okhttp:4.9.2")
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 tasks.withType<JavaCompile>().configureEach {

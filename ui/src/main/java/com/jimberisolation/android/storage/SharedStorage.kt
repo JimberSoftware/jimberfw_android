@@ -209,13 +209,11 @@ class SharedStorage private constructor() {
 
 
     fun clearUserLoginData() {
-        val editor = sharedPreferences.edit()
-
-        clearCurrentUser();
-        clearRefreshToken()
-        clearAuthenticationToken()
-
-        editor.apply();
+        sharedPreferences.edit()
+            .remove(CURRENT_USER)
+            .remove(REFRESH_TOKEN_KEY)
+            .remove(AUTHENTICATION_TOKEN_KEY)
+            .apply()
     }
 
     // Function to get the authentication token
@@ -246,8 +244,35 @@ class SharedStorage private constructor() {
         editor.apply();
     }
 
-    // Function to get the authentication token
-    fun getAll(): MutableMap<String, *>? {
-        return sharedPreferences.all;
+    // Export a detached snapshot; never change the credentials used by the app.
+    fun getRedactedData(): Map<String, Any?> {
+        val redacted = "[REDACTED]"
+        val publicKeyPairFields = setOf(
+            WIREGUARD_DAEMON_NAME, WIREGUARD_DAEMON_ID, WIREGUARD_USER_ID,
+            WIREGUARD_COMPANY, WIREGUARD_PK_ED25519
+        )
+
+        return sharedPreferences.all.mapValues { (key, value) ->
+            when (key) {
+                CURRENT_USER -> value
+                WIREGUARD_KEYPAIR -> try {
+                    val keyPairs = JSONArray(value as String)
+                    for (i in 0 until keyPairs.length()) {
+                        val keyPair = keyPairs.getJSONObject(i)
+                        for (field in keyPair.keys().asSequence().toList()) {
+                            if (field !in publicKeyPairFields) {
+                                keyPair.put(field, redacted)
+                            }
+                        }
+                    }
+                    keyPairs.toString()
+                } catch (_: Exception) {
+                    // Malformed storage must never fall back to exporting raw secrets.
+                    redacted
+                }
+                // Tokens and unknown future fields are private by default.
+                else -> redacted
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ import com.jimberisolation.android.Application
 import com.jimberisolation.android.R
 import com.jimberisolation.android.activity.BaseActivity
 import com.jimberisolation.android.activity.BaseActivity.OnSelectedTunnelChangedListener
+import com.jimberisolation.android.api.userFacingMessage
 import com.jimberisolation.android.backend.GoBackend
 import com.jimberisolation.android.backend.Tunnel
 import com.jimberisolation.android.daemon.getDaemonInfo
@@ -28,6 +29,7 @@ import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.ErrorMessages
 import com.jimberisolation.android.util.parseEdPublicKeyToCurveX25519
 import com.jimberisolation.config.Config
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
@@ -76,26 +78,14 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
         // Use lifecycleScope to launch a coroutine and handle the async call
         activity.lifecycleScope.launch {
             try {
-                if(!tunnel.isApproved()) {
+                if (isChecked && !tunnel.isApproved()) {
                     val storageTunnel = SharedStorage.getInstance().getDaemonKeyPairByDaemonId(tunnel.getDaemonId())
 
-                    val result = getDaemonInfo(storageTunnel!!.daemonId, storageTunnel.companyName, storageTunnel.baseEncodedSkEd25519).getOrNull()
-                    if(result == null) {
-                        Toast.makeText(activity, "The daemon is still not approved, could not fetch data", Toast.LENGTH_SHORT).show()
-
-                        // Hack to avoid blocked button??
-                        tunnel.setStateAsync(Tunnel.State.UP)
-                        tunnel.setStateAsync(Tunnel.State.DOWN)
-                        return@launch;
-                    }
-
-                    if(!result.isApproved) {
+                    val result = getDaemonInfo(storageTunnel!!.daemonId, storageTunnel.companyName, storageTunnel.baseEncodedSkEd25519).getOrThrow()
+                    if (!result.isApproved) {
                         Toast.makeText(activity, "The daemon is still not approved, no connection is possible", Toast.LENGTH_SHORT).show()
-
-                        // Hack to avoid blocked button??
-                        tunnel.setStateAsync(Tunnel.State.UP)
-                        tunnel.setStateAsync(Tunnel.State.DOWN)
-                        return@launch;
+                        tunnel.onStateChanged(tunnel.state)
+                        return@launch
                     }
 
                     tunnel.setIsApproved(true)
@@ -109,20 +99,10 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
                     val daemonId = tunnel.getDaemonId()
                     val kp = SharedStorage.getInstance().getDaemonKeyPairByDaemonId(daemonId)
 
-                    val networkController = getDaemonConnectionData(daemonId, kp!!.companyName, kp.baseEncodedSkEd25519)
-                    if(!networkController.isSuccess) {
-                        Toast.makeText(activity, "Daemon information could not be retrieved, please restart app", Toast.LENGTH_SHORT).show()
+                    val result = getDaemonConnectionData(daemonId, kp!!.companyName, kp.baseEncodedSkEd25519).getOrThrow()
 
-                        tunnel.setStateAsync(Tunnel.State.UP)
-                        tunnel.setStateAsync(Tunnel.State.DOWN)
-
-                        return@launch;
-                    }
-
-                    val result = networkController.getOrNull();
-
-                    val newPublicIp = result?.endpointAddress;
-                    val newPublicKey = parseEdPublicKeyToCurveX25519(result!!.routerPublicKey);
+                    val newPublicIp = result.endpointAddress;
+                    val newPublicKey = parseEdPublicKeyToCurveX25519(result.routerPublicKey);
                     val newAllowedIps = result.allowedIps
                     val newDNSServer = result.ipAddress
 
@@ -144,7 +124,7 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
                 }
 
                 // Proceed with permission handling if GoBackend is being used
-                if (Application.getBackend() is GoBackend) {
+                if (isChecked && Application.getBackend() is GoBackend) {
                     try {
                         val intent = GoBackend.VpnService.prepare(activity)
                         if (intent != null) {
@@ -153,6 +133,8 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
                             permissionActivityResultLauncher.launch(intent)
                             return@launch
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Throwable) {
                         val message = activity.getString(R.string.error_prepare, ErrorMessages[e])
                         Log.e(TAG, message, e)
@@ -161,7 +143,11 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
 
                 // Set the tunnel state with permissions
                 setTunnelStateWithPermissionsResult(tunnel, isChecked)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
+                tunnel.onStateChanged(tunnel.state)
+                Toast.makeText(activity, e.userFacingMessage(), Toast.LENGTH_LONG).show()
                 Log.e(TAG, "Failed to get or update tunnel config", e)
             }
         }
@@ -173,14 +159,14 @@ abstract class BaseFragment : Fragment(), OnSelectedTunnelChangedListener {
         activity.lifecycleScope.launch {
             try {
                 tunnel.setStateAsync(Tunnel.State.of(checked))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
+                tunnel.onStateChanged(tunnel.state)
                 val error = ErrorMessages[e]
                 val messageResId = if (checked) R.string.error_up else R.string.error_down
                 val message = activity.getString(messageResId, error)
-                val view = view
-                if (view != null)
-                else
-                    Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+                Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
                 Log.e(TAG, message, e)
             }
         }

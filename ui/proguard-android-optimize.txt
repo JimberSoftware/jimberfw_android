@@ -57,6 +57,10 @@
 # If you use suspend functions (coroutines), keep the required metadata
 -keepclassmembers class kotlinx.coroutines.** { *; }
 
+# Separately compiled release instrumentation calls Kotlin's public facade classes.
+# Retain their names/types even when app call sites are optimized to implementation classes.
+-keep class kotlin.**Kt { *; }
+
 # Keep data classes
 -keepclassmembers class com.jimberisolation.android.util.** {
     *;
@@ -170,6 +174,8 @@
 -dontwarn com.google.crypto.tink.subtle.Ed25519Sign
 -dontwarn com.google.crypto.tink.subtle.Ed25519Verify
 -dontwarn com.google.crypto.tink.subtle.X25519
+# Optional Nimbus JWE algorithm; Microsoft sign-in does not use XC20P encryption.
+-dontwarn com.google.crypto.tink.subtle.XChaCha20Poly1305
 -dontwarn org.bouncycastle.asn1.ASN1Encodable
 -dontwarn org.bouncycastle.asn1.pkcs.PrivateKeyInfo
 -dontwarn org.bouncycastle.asn1.x509.AlgorithmIdentifier

@@ -1,4 +1,3 @@
-import android.util.Log
 import com.jimberisolation.android.authentication.AuthenticationApiRequest
 import com.jimberisolation.android.authentication.AuthenticationWithVerificationCodeApiRequest
 import com.jimberisolation.android.authentication.RefreshTokenApiResult
@@ -29,52 +28,47 @@ object AuthEventManager {
     val authFailedEvent = SingleLiveEvent<Boolean>()
 }
 
-class AuthInterceptor : Interceptor {
-    private val excludedUrls = listOf(
-        Config.BASE_URL + "auth/refresh",
+class AuthInterceptor(
+    private val renewToken: () -> String? = { runBlocking { refreshToken().getOrNull()?.accessToken } },
+    private val onSessionExpired: () -> Unit = { AuthEventManager.authFailedEvent.postValue(true) }
+) : Interceptor {
+    private val excludedPaths = listOf(
+        "auth/refresh", "auth/verify-google-id", "auth/verify-microsoft-id",
+        "auth/send-user-token-code", "auth/verify-email-token"
     )
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val originalRequest = chain.request()
-
-        if (excludedUrls.any { originalRequest.url.toString().startsWith(it) }) {
-            return chain.proceed(originalRequest)
+        val request = chain.request()
+        val response = chain.proceed(request)
+        val authorization = request.header("Authorization")
+        val cookies = request.header("Cookie").orEmpty().split(';').map { it.trim() }
+        val hasSession = authorization?.startsWith("Bearer ") == true || cookies.any {
+            val name = it.substringBefore('=')
+            val value = it.substringAfter('=', "")
+            name in setOf("Authentication", "Refresh") && value.isNotBlank() && value != "null"
+        }
+        val usesSignature = authorization != null && !authorization.startsWith("Bearer ")
+        if (response.code != 401 || !hasSession || usesSignature ||
+            excludedPaths.any { request.url.encodedPath.endsWith("/$it") }) {
+            return response
         }
 
-        val response = chain.proceed(originalRequest)
-
-        if (response.code == 401) {
-            synchronized(this) {
-                val newToken = runBlocking { renewJwt() }
-
-                // If the token is unchanged, attempt renewal
-                return if (newToken != null) {
-                        // Retry the original request with the new token
-                        val newRequest = originalRequest.newBuilder().header("Authorization", "Bearer $newToken").build()
-                        chain.proceed(newRequest)
-                }
-                else {
-                    Log.e("ERROR_AUTH", "POSTING AUTH FAILED EVENT")
-                    AuthEventManager.authFailedEvent.postValue(true)
-                    response
-                }
+        synchronized(this) {
+            val newToken = renewToken()?.takeIf { it.isNotBlank() && it != "null" }
+            if (newToken == null) {
+                onSessionExpired()
+                return response // Keep the original Problem Details available to the caller.
             }
-        }
-
-        return response
-    }
-
-    private suspend fun renewJwt(): String? {
-        return try {
-            val newAccessToken = refreshToken()
-            if (newAccessToken.isSuccess) {
-                newAccessToken.getOrThrow().accessToken
-            } else {
-                null
+            val retry = request.newBuilder().header("Authorization", "Bearer $newToken")
+            if (request.header("Cookie") != null) {
+                val updatedCookies = cookies.filter { it.isNotBlank() && it.substringBefore('=') != "Authentication" } +
+                    "Authentication=$newToken"
+                retry.header("Cookie", updatedCookies.joinToString("; "))
             }
-        } catch (e: Exception) {
-            println("Error renewing JWT: ${e.message}")
-            null
+            response.close()
+            return chain.proceed(retry.build()).also {
+                if (it.code == 401) onSessionExpired()
+            }
         }
     }
 }

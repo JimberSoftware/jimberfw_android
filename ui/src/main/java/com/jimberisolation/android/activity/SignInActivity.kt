@@ -11,26 +11,24 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.credentials.CredentialManager
 import androidx.lifecycle.lifecycleScope
 import authenticateUser
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Task
 import com.google.android.material.snackbar.Snackbar
 import com.jimberisolation.android.Application.Companion.getTunnelManager
-import com.jimberisolation.android.BuildConfig
 import com.jimberisolation.android.R
+import com.jimberisolation.android.api.fieldError
+import com.jimberisolation.android.api.hasHttpStatus
+import com.jimberisolation.android.api.userFacingMessage
 import com.jimberisolation.android.authentication.AuthenticationType
+import com.jimberisolation.android.authentication.UserAuthentication
+import com.jimberisolation.android.authentication.googleIdToken
+import com.jimberisolation.android.authentication.googleSignInErrorMessage
+import com.jimberisolation.android.authentication.googleSignInRequest
 import com.jimberisolation.android.daemon.getDaemonInfo
 import com.jimberisolation.android.storage.SharedStorage
 import com.jimberisolation.android.util.TunnelImporter.importTunnel
@@ -44,204 +42,239 @@ import com.microsoft.identity.client.SignInParameters
 import com.microsoft.identity.client.exception.MsalException
 import getDeviceHostname
 import isValidMobileHostname
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import register
 import sanitizeTunnelName
-import java.util.Arrays
-
 
 class SignInActivity : AppCompatActivity() {
-
-    // Google
-    private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var signInLauncher: ActivityResultLauncher<Intent>
-
-    // MS
-    private var mSingleAccountApp: ISingleAccountPublicClientApplication? = null
-
     private var actionBar: ActionBar? = null
-    private var backPressedCallback: OnBackPressedCallback? = null
-
-    private var daemonName: String? = getDeviceHostname();
+    private var daemonName: String? = getDeviceHostname()
+    private var microsoftApp: ISingleAccountPublicClientApplication? = null
+    private var microsoftReady = false
+    private var signingIn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.sign_in_activity)
-
         SharedStorage.initialize(this)
 
         actionBar = supportActionBar
         actionBar?.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM)
         actionBar?.setCustomView(R.layout.jimber_action_bar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        onBackPressedDispatcher.addCallback(this) { handleBackPressed() }
 
-        getSupportActionBar()?.setDisplayHomeAsUpEnabled(false);
-
-        backPressedCallback = onBackPressedDispatcher.addCallback(this) { handleBackPressed() }
-
-        findViewById<View>(R.id.google_sign_in)?.setOnClickListener {
-            val signInIntent = googleSignInClient.signInIntent
-            signInLauncher.launch(signInIntent)
+        findViewById<View>(R.id.google_sign_in).setOnClickListener { signInWithGoogle() }
+        findViewById<View>(R.id.microsoft_sign_in).setOnClickListener { signInWithMicrosoft() }
+        findViewById<View>(R.id.email_sign_in).setOnClickListener {
+            startActivity(Intent(this, EmailRegistrationActivity::class.java))
         }
-
-        findViewById<View>(R.id.microsoft_sign_in)?.setOnClickListener {
-            if (mSingleAccountApp == null) {
-                Toast.makeText(this, "Microsoft Sign-In is still initializing. Please try again shortly.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val signInParameters = SignInParameters.builder()
-                .withActivity(this)
-                .withLoginHint(null)
-                .withScopes(Arrays.asList("User.Read", "openid", "profile", "email"))
-                .withCallback(getAuthInteractiveCallback())
-                .build()
-
-            mSingleAccountApp?.signIn(signInParameters)
-        }
-
-        findViewById<View>(R.id.email_sign_in)?.setOnClickListener {
-            val intent = Intent(this, EmailRegistrationActivity::class.java)
-            startActivity(intent)
-        }
-
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(Config.GOOGLE_AUTH_ID)
-            .requestEmail()
-            .build()
-
-        signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-
-            // Always sign out
-            val googleSignInClient = GoogleSignIn.getClient(this, gso)
-            googleSignInClient.signOut()
-
-            handleSignInResultGoogle(task)
-        }
-
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-
-        // MS
-        PublicClientApplication.createSingleAccountPublicClientApplication(
-            this,
-            R.raw.msal_config,
-            object : IPublicClientApplication.ISingleAccountApplicationCreatedListener {
-                override fun onCreated(application: ISingleAccountPublicClientApplication) {
-                    mSingleAccountApp = application
-                    getCurrentAccount();
-                }
-
-                override fun onError(exception: MsalException) {
-                    // Log the exception
-                    exception.printStackTrace()
-                }
-            })
-
+        updateSignInButtons()
+        initializeMicrosoft()
     }
 
-    // Function to get the current account
-    fun getCurrentAccount() {
-        mSingleAccountApp?.getCurrentAccountAsync(object : ISingleAccountPublicClientApplication.CurrentAccountCallback {
+    private fun updateSignInButtons() {
+        findViewById<View>(R.id.google_sign_in).isEnabled = !signingIn
+        findViewById<View>(R.id.microsoft_sign_in).isEnabled = !signingIn && microsoftReady
+        findViewById<View>(R.id.email_sign_in).isEnabled = !signingIn
+    }
+
+    private fun showSignInError(message: String) {
+        if (!isFinishing && !isDestroyed) {
+            Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun signInWithGoogle() {
+        if (signingIn) return
+        signingIn = true
+        updateSignInButtons()
+        lifecycleScope.launch {
+            try {
+                val token = try {
+                    val response = CredentialManager.create(this@SignInActivity).getCredential(
+                        context = this@SignInActivity,
+                        request = googleSignInRequest(Config.GOOGLE_AUTH_ID)
+                    )
+                    googleIdToken(response.credential)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    googleSignInErrorMessage(e)?.let(::showSignInError)
+                    return@launch
+                }
+                // The existing API verifies the Google ID token before creating the app session.
+                completeSignIn(authenticateUser(token, AuthenticationType.Google).getOrThrow())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                showSignInError(e.userFacingMessage())
+            } finally {
+                signingIn = false
+                updateSignInButtons()
+            }
+        }
+    }
+
+    private fun initializeMicrosoft() {
+        PublicClientApplication.createSingleAccountPublicClientApplication(
+            this, R.raw.msal_config,
+            object : IPublicClientApplication.ISingleAccountApplicationCreatedListener {
+                override fun onCreated(application: ISingleAccountPublicClientApplication) {
+                    microsoftApp = application
+                    clearCachedMicrosoftAccount(application, onCleared = {
+                        microsoftReady = true
+                        updateSignInButtons()
+                    }, onError = { microsoftInitializationFailed() })
+                }
+                override fun onError(exception: MsalException) = microsoftInitializationFailed()
+            }
+        )
+    }
+
+    private fun clearCachedMicrosoftAccount(
+        app: ISingleAccountPublicClientApplication,
+        onCleared: () -> Unit,
+        onError: (MsalException) -> Unit
+    ) {
+        app.getCurrentAccountAsync(object : ISingleAccountPublicClientApplication.CurrentAccountCallback {
             override fun onAccountLoaded(activeAccount: IAccount?) {
-                if (activeAccount != null) {
-                    mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
-                        override fun onSignOut() {
-                            println("Successfully signed out.")
-                        }
-
-                        override fun onError(exception: MsalException) {
-                            exception.printStackTrace()
-                        }
+                if (activeAccount == null) {
+                    onCleared()
+                } else {
+                    app.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+                        override fun onSignOut() = onCleared()
+                        override fun onError(exception: MsalException) = onError(exception)
                     })
-                    val accountName = activeAccount.username
-                    println("Signed in as: $accountName")
-                } else {
-                    // No account is signed in
-                    println("No account is signed in.")
                 }
             }
-
-            override fun onAccountChanged(priorAccount: IAccount?, currentAccount: IAccount?) {
-                // Account changed
-                if (currentAccount != null) {
-                    // Do something with the new account info
-                    val accountName = currentAccount.username
-                    println("Account changed to: $accountName")
-                } else {
-                    // Signed out
-                    println("Signed out.")
-                }
-            }
-
-            override fun onError(exception: MsalException) {
-                // Log the exception
-                exception.printStackTrace()
-            }
+            override fun onAccountChanged(priorAccount: IAccount?, currentAccount: IAccount?) = Unit
+            override fun onError(exception: MsalException) = onError(exception)
         })
     }
 
-    private fun handleSignInResultGoogle(completedTask: Task<GoogleSignInAccount>) {
-        lifecycleScope.launch {
-            try {
-                val account = completedTask.getResult(ApiException::class.java)
-                val token = account.idToken.toString()
+    private fun microsoftInitializationFailed() {
+        microsoftReady = false
+        updateSignInButtons()
+        showSignInError("Microsoft sign-in could not initialize. Reopen this screen to try again.")
+    }
 
-                val userAuthenticationResult = authenticateUser(token, AuthenticationType.Google);
-                if(userAuthenticationResult.isFailure) {
-                    val userAuthenticationException = userAuthenticationResult.exceptionOrNull()
-                    val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                    Snackbar.make(view, userAuthenticationException?.message.toString(), Snackbar.LENGTH_LONG).show()
-                    return@launch
-                }
+    private fun signInWithMicrosoft() {
+        val app = microsoftApp ?: return
+        if (signingIn || !microsoftReady) return
+        signingIn = true
+        updateSignInButtons()
+        // A previous attempt can have reached Microsoft but failed during app registration.
+        clearCachedMicrosoftAccount(app, onCleared = { launchMicrosoftSignIn(app) }, onError = { exception ->
+            Log.w("MicrosoftAuthentication", "Account reset failed (${exception.errorCode})")
+            signingIn = false
+            updateSignInButtons()
+            showSignInError("Microsoft sign-in failed. Please try again.")
+        })
+    }
 
-                val userId = userAuthenticationResult.getOrThrow().userId
-                val companyName = userAuthenticationResult.getOrThrow().companyName
-                val cleanedCompanyName = sanitizeTunnelName(companyName)
-
-                var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
-                if(daemonAlreadyInStorage != null) {
-                    val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
-                    if(result.isFailure && result.exceptionOrNull()?.message == "403") {
-                        Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
-                        Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
-
-                        val tunnelManager = getTunnelManager();
-                        val existingTunnel = tunnelManager.getTunnelsOfUser()
-                        getTunnelManager().delete(existingTunnel[0])
-
-                        SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
-                        daemonAlreadyInStorage = null;
+    private fun launchMicrosoftSignIn(app: ISingleAccountPublicClientApplication) {
+        if (isFinishing || isDestroyed) return
+        try {
+            app.signIn(SignInParameters.builder()
+                .withActivity(this)
+                // MSAL adds the reserved openid/profile/offline_access scopes itself.
+                .withScopes(listOf("User.Read", "email"))
+                .withCallback(object : AuthenticationCallback {
+                    override fun onSuccess(authenticationResult: IAuthenticationResult) {
+                        lifecycleScope.launch {
+                            try {
+                                val token = authenticationResult.account.idToken
+                                if (token.isNullOrBlank()) {
+                                    showSignInError("Microsoft did not return an ID token. Please sign in again.")
+                                    return@launch
+                                }
+                                val result = authenticateUser(token, AuthenticationType.Microsoft)
+                                completeSignIn(result.getOrThrow())
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                showSignInError(e.userFacingMessage())
+                            } finally {
+                                signingIn = false
+                                updateSignInButtons()
+                            }
+                        }
                     }
-
-                    else {
-                        loadExistingDaemon();
-                        return@launch
+                    override fun onError(exception: MsalException) {
+                        // Log only the SDK error code, never tokens or full authentication results.
+                        Log.w("MicrosoftAuthentication", "Sign-in failed (${exception.errorCode})")
+                        signingIn = false
+                        updateSignInButtons()
+                        showSignInError("Microsoft sign-in failed. Please try again.")
                     }
+                    override fun onCancel() {
+                        signingIn = false
+                        updateSignInButtons()
+                    }
+                }).build())
+        } catch (e: Exception) {
+            Log.w("MicrosoftAuthentication", "Could not start sign-in (${e.javaClass.simpleName})")
+            signingIn = false
+            updateSignInButtons()
+            showSignInError("Microsoft sign-in failed. Please try again.")
+        }
+    }
+
+    private suspend fun completeSignIn(userAuthentication: UserAuthentication) {
+        val userId = userAuthentication.userId
+        val companyName = userAuthentication.companyName
+        val cleanedCompanyName = sanitizeTunnelName(companyName)
+
+        var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
+        if(daemonAlreadyInStorage != null) {
+            val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
+            if(result.isFailure && result.exceptionOrNull().hasHttpStatus(403, 404)) {
+                Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
+                Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
+
+                val tunnelManager = getTunnelManager();
+                val existingTunnel = tunnelManager.getTunnels().firstOrNull { it.getDaemonId() == daemonAlreadyInStorage?.daemonId }
+                existingTunnel?.let { tunnelManager.deleteState(it) }
+
+                SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
+                daemonAlreadyInStorage = null;
+            }
+
+            else {
+                if (result.isFailure) {
+                    Snackbar.make(findViewById(android.R.id.content), result.exceptionOrNull().userFacingMessage(), Snackbar.LENGTH_LONG).show()
+                    return
                 }
-
-                daemonName = daemonAlreadyInStorage?.daemonName ?: run {
-                    showNameInputDialog() ?: return@launch
-                }
-
-                // Proceed with the WireGuard config
-                val wireguardConfigResult = register(userAuthenticationResult.getOrThrow(), daemonName!!)
-
-                if (wireguardConfigResult.isFailure) {
-                    val createDaemonException = wireguardConfigResult.exceptionOrNull()
-                    val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                    Snackbar.make(view, createDaemonException?.message.toString(), Snackbar.LENGTH_LONG).show()
-                    return@launch
-                }
-
-                val wireguardConfig = wireguardConfigResult.getOrThrow().configurationString
-                val daemonId = wireguardConfigResult.getOrThrow().daemonId
-
-                importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
-            } catch (e: ApiException) {
-                Log.e("Authentication", "An error occurred", e)
+                loadExistingDaemon();
+                return
             }
         }
+
+        daemonName = daemonAlreadyInStorage?.daemonName ?: run {
+            showNameInputDialog() ?: return
+        }
+
+        // Proceed with the WireGuard config
+        var wireguardConfigResult = register(userAuthentication, daemonName!!)
+        while (wireguardConfigResult.exceptionOrNull().fieldError("name") != null) {
+            daemonName = showNameInputDialog(wireguardConfigResult.exceptionOrNull().fieldError("name")) ?: return
+            wireguardConfigResult = register(userAuthentication, daemonName!!)
+        }
+
+        if (wireguardConfigResult.isFailure) {
+            val createDaemonException = wireguardConfigResult.exceptionOrNull()
+            val view = findViewById<View>(android.R.id.content) // or some other view in your layout
+            Snackbar.make(view, createDaemonException.userFacingMessage(), Snackbar.LENGTH_LONG).show()
+            return
+        }
+
+        val wireguardConfig = wireguardConfigResult.getOrThrow().configurationString
+        val daemonId = wireguardConfigResult.getOrThrow().daemonId
+
+        importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
     }
 
     private fun loadExistingDaemon() {
@@ -267,90 +300,6 @@ class SignInActivity : AppCompatActivity() {
     }
 
 
-    private fun getAuthInteractiveCallback(): AuthenticationCallback {
-        return object : AuthenticationCallback {
-            override fun onSuccess(authenticationResult: IAuthenticationResult) {
-                val token = authenticationResult.account.idToken
-                lifecycleScope.launch {
-                    val userAuthenticationResult = authenticateUser(token!!, AuthenticationType.Microsoft);
-                    if(userAuthenticationResult.isFailure) {
-                        mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
-                            override fun onSignOut() {
-                                println("Successfully signed out.")
-                            }
-
-                            override fun onError(exception: MsalException) {
-                                exception.printStackTrace()
-                            }
-                        })
-
-                        val userAuthenticationException = userAuthenticationResult.exceptionOrNull()
-                        val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                        Snackbar.make(view, userAuthenticationException?.message.toString(), Snackbar.LENGTH_LONG).show()
-                        return@launch
-                    }
-
-                    val userId = userAuthenticationResult.getOrThrow().userId
-                    val companyName = userAuthenticationResult.getOrThrow().companyName
-                    val cleanedCompanyName = sanitizeTunnelName(companyName)
-
-                    var daemonAlreadyInStorage = SharedStorage.getInstance().getDaemonKeyPairByUserId(userId)
-                    if(daemonAlreadyInStorage != null) {
-                        val result = getDaemonInfo(daemonAlreadyInStorage.daemonId, daemonAlreadyInStorage.companyName,  daemonAlreadyInStorage.baseEncodedSkEd25519);
-                        if(result.isFailure && result.exceptionOrNull()?.message == "403") {
-                            Log.w("LOGIN_WARNING", "TUNNEL IN KEYSTORE BUT NOT IN SIGNAL (probably removed in signal UI), will remove status code 403")
-                            Log.w("LOGIN_WARNING", "REMOVING IS NOT AN ISSUE, JUST RE LOGIN AND REGENERATE")
-
-                            val tunnelManager = getTunnelManager();
-                            val existingTunnel = tunnelManager.getTunnelsOfUser()
-                            getTunnelManager().delete(existingTunnel[0])
-
-                            SharedStorage.getInstance().clearDaemonKeys(daemonAlreadyInStorage.daemonId)
-                            daemonAlreadyInStorage = null;
-                        }
-
-                        else {
-                            loadExistingDaemon();
-                            return@launch
-                        }
-                    }
-
-                    daemonName = daemonAlreadyInStorage?.daemonName ?: run {
-                        showNameInputDialog() ?: return@launch
-                    }
-
-                    // Proceed with the WireGuard config
-                    val wireguardConfigResult = register(userAuthenticationResult.getOrThrow(), daemonName!!)
-
-                    if (wireguardConfigResult.isFailure) {
-                        val createDaemonException = wireguardConfigResult.exceptionOrNull()
-                        val view = findViewById<View>(android.R.id.content) // or some other view in your layout
-                        Snackbar.make(view, createDaemonException?.message.toString(), Snackbar.LENGTH_LONG).show()
-                        return@launch
-                    }
-
-                    val wireguardConfig = wireguardConfigResult.getOrThrow().configurationString
-                    val daemonId = wireguardConfigResult.getOrThrow().daemonId
-
-                    Log.d("Configuration", wireguardConfig)
-
-                    importTunnelAndNavigate(wireguardConfig, daemonId, cleanedCompanyName)
-                }
-            }
-
-            override fun onError(exception: MsalException) {
-                Toast.makeText(this@SignInActivity, exception.message, Toast.LENGTH_SHORT).show()
-                Log.e("Error", "Error", exception)
-            }
-
-            override fun onCancel() {
-                /* User canceled the authentication */
-                Log.d("cancelled", "User cancelled login.")
-            }
-        }
-    }
-
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.settings, menu)
         return true
@@ -372,7 +321,7 @@ class SignInActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun showNameInputDialog(): String? {
+    private suspend fun showNameInputDialog(serverError: String? = null): String? {
         // Create a deferred result to await the input
         val result = CompletableDeferred<String?>()
 
@@ -389,7 +338,8 @@ class SignInActivity : AppCompatActivity() {
         val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
         val btnSubmit = dialogView.findViewById<Button>(R.id.btnSubmit)
 
-        nameInput.setText(daemonName);
+        nameInput.setText(daemonName)
+        nameInput.error = serverError
 
         // Create the dialog
         val dialog = dialogBuilder.create()
@@ -418,7 +368,11 @@ class SignInActivity : AppCompatActivity() {
         dialog.show()
 
         // Await the result before proceeding
-        return result.await()
+        return try {
+            result.await()
+        } finally {
+            dialog.dismiss()
+        }
     }
 
     private fun handleBackPressed() {
