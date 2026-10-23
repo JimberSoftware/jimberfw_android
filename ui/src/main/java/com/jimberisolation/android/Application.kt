@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android
@@ -24,7 +24,6 @@ import com.jimberisolation.android.backend.WgQuickBackend
 import com.jimberisolation.android.configStore.FileConfigStore
 import com.jimberisolation.android.model.TunnelManager
 import com.jimberisolation.android.storage.SharedStorage
-import com.jimberisolation.android.updater.Updater
 import com.jimberisolation.android.util.RootShell
 import com.jimberisolation.android.util.ToolsInstaller
 import com.jimberisolation.android.util.UserKnobs
@@ -122,7 +121,6 @@ class Application : android.app.Application() {
                 Log.e(TAG, Log.getStackTraceString(e))
             }
         }
-        // Updater.monitorForUpdates()
 
         StrictMode.setVmPolicy(VmPolicy.Builder().detectAll().build())
         val policy = ThreadPolicy.Builder().permitAll().build()
@@ -140,7 +138,7 @@ class Application : android.app.Application() {
     }
 
     companion object {
-        val USER_AGENT = String.format(Locale.ENGLISH, "WireGuard/%s (Android %d; %s; %s; %s %s; %s)", BuildConfig.VERSION_NAME, Build.VERSION.SDK_INT, if (Build.SUPPORTED_ABIS.isNotEmpty()) Build.SUPPORTED_ABIS[0] else "unknown ABI", Build.BOARD, Build.MANUFACTURER, Build.MODEL, Build.FINGERPRINT)
+        val USER_AGENT = String.format(Locale.ENGLISH, "WireGuard/%s (Android %d; %s; %s; %s %s; %s; %s)", BuildConfig.VERSION_NAME, Build.VERSION.SDK_INT, if (Build.SUPPORTED_ABIS.isNotEmpty()) Build.SUPPORTED_ABIS[0] else "unknown ABI", Build.BOARD, Build.MANUFACTURER, Build.MODEL, Build.FINGERPRINT, BuildConfig.APPLICATION_ID)
         private const val TAG = "WireGuard/Application"
         private lateinit var weakSelf: WeakReference<Application>
 

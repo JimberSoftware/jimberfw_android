@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.activity
@@ -22,7 +22,6 @@ import com.jimberisolation.android.backend.Tunnel
 import com.jimberisolation.android.util.ErrorMessages
 import kotlinx.coroutines.launch
 
-@RequiresApi(Build.VERSION_CODES.N)
 class TunnelToggleActivity : AppCompatActivity() {
     private val permissionActivityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { toggleTunnelWithPermissionsResult() }
@@ -50,10 +49,14 @@ class TunnelToggleActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             if (Application.getBackend() is GoBackend) {
-                val intent = GoBackend.VpnService.prepare(this@TunnelToggleActivity)
-                if (intent != null) {
-                    permissionActivityResultLauncher.launch(intent)
-                    return@launch
+                try {
+                    val intent = GoBackend.VpnService.prepare(this@TunnelToggleActivity)
+                    if (intent != null) {
+                        permissionActivityResultLauncher.launch(intent)
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@TunnelToggleActivity, ErrorMessages[e], Toast.LENGTH_LONG).show()
                 }
             }
             toggleTunnelWithPermissionsResult()

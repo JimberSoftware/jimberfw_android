@@ -1,6 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.api.tasks.bundling.Zip
 
 val pkg: String = providers.gradleProperty("wireguardPackageName").get()
 
@@ -11,7 +12,11 @@ plugins {
 }
 
 android {
-    compileSdk = 36
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
     ndkVersion = "28.2.13676358"
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -19,7 +24,7 @@ android {
     }
     namespace = "${pkg}.tunnel"
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
     }
     externalNativeBuild {
         cmake {
@@ -35,6 +40,7 @@ android {
                 cmake {
                     targets("libwg-go.so", "libwg.so", "libwg-quick.so")
                     arguments("-DGRADLE_USER_HOME=${project.gradle.gradleUserHomeDir}")
+                    arguments("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
                 }
             }
         }
@@ -82,30 +88,30 @@ publishing {
                 from(components["release"])
             }
             pom {
-                name.set("WireGuard Tunnel Library")
-                description.set("Embeddable tunnel library for WireGuard for Android")
-                url.set("https://www.wireguard.com/")
+                name = "WireGuard Tunnel Library"
+                description = "Embeddable tunnel library for WireGuard for Android"
+                url = "https://www.wireguard.com/"
 
                 licenses {
                     license {
-                        name.set("The Apache Software License, Version 2.0")
-                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                        distribution.set("repo")
+                        name = "The Apache Software License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
                     }
                 }
                 scm {
-                    connection.set("scm:git:https://git.zx2c4.com.jimberisolation.android")
-                    developerConnection.set("scm:git:https://git.zx2c4.com.jimberisolation.android")
-                    url.set("https://git.zx2c4.com.jimberisolation.android")
+                    connection.set("scm:git:https://github.com/JimberSoftware/jimberfw_android")
+                    developerConnection.set("scm:git:https://github.com/JimberSoftware/jimberfw_android")
+                    url.set("https://github.com/JimberSoftware/jimberfw_android")
                 }
                 developers {
                     organization {
-                        name.set("WireGuard")
-                        url.set("https://www.wireguard.com/")
+                        name = "WireGuard"
+                        url = "https://www.wireguard.com/"
                     }
                     developer {
-                        name.set("WireGuard")
-                        email.set("team@wireguard.com")
+                        name = "WireGuard"
+                        email = "team@wireguard.com"
                     }
                 }
             }
@@ -113,14 +119,27 @@ publishing {
     }
     repositories {
         maven {
-            name = "sonatype"
-            url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-            credentials {
-                username = providers.environmentVariable("SONATYPE_USER").orNull
-                password = providers.environmentVariable("SONATYPE_PASSWORD").orNull
-            }
+            name = "SonatypeUpload"
+            setUrl(layout.buildDirectory.dir("sonatype"))
         }
     }
+}
+
+val releasePublication = publishing.publications.named("release").get() as MavenPublication
+val mavenGroupPath = releasePublication.groupId.replace('.', '/')
+val mavenArtifactId = releasePublication.artifactId
+val mavenVersion = releasePublication.version
+
+tasks.register<Zip>("zipReleasePublication") {
+    dependsOn(tasks.named("publishReleasePublicationToSonatypeUploadRepository"))
+    group = "distribution"
+    description = "Zips the release publication in Maven repository layout."
+
+    val sourceDir = layout.buildDirectory.dir("sonatype/${mavenGroupPath}/${mavenArtifactId}/${mavenVersion}")
+    from(sourceDir)
+    archiveFileName.set("${mavenArtifactId}-${mavenVersion}-maven.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    into("${mavenGroupPath}/${mavenArtifactId}/${mavenVersion}")
 }
 
 signing {

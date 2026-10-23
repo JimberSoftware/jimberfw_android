@@ -115,6 +115,8 @@ class TunnelAccessTest {
         override fun getState(tunnel: Tunnel) = state
         override fun getStatistics(tunnel: Tunnel): Statistics = error("Statistics are not used in authorization tests")
         override fun getVersion() = "test"
+        override fun isAlwaysOn() = false
+        override fun isLockdownEnabled() = false
         override fun setState(tunnel: Tunnel, requested: Tunnel.State, config: Config?): Tunnel.State {
             calls.add(requested)
             state = if (requested == Tunnel.State.TOGGLE) {

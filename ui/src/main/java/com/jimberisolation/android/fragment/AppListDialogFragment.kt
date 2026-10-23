@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.fragment
@@ -14,7 +14,6 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.databinding.Observable
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
@@ -48,7 +47,7 @@ class AppListDialogFragment : DialogFragment() {
                     val packageInfos = getPackagesHoldingPermissions(pm, arrayOf(Manifest.permission.INTERNET))
                     packageInfos.forEach {
                         val packageName = it.packageName
-                        val appInfo = it.applicationInfo
+                        val appInfo = it.applicationInfo ?: return@forEach
                         val appData =
                             ApplicationData(appInfo!!.loadIcon(pm), appInfo.loadLabel(pm).toString(), packageName, currentlySelectedApps.contains(packageName))
                         applicationData.add(appData)
@@ -145,10 +144,11 @@ class AppListDialogFragment : DialogFragment() {
             }
         }
         setFragmentResult(
-            REQUEST_SELECTION, bundleOf(
-                KEY_SELECTED_APPS to selectedApps.toTypedArray(),
-                KEY_IS_EXCLUDED to (tabs?.selectedTabPosition == 0)
-            )
+            REQUEST_SELECTION,
+            Bundle().apply {
+                putStringArray(KEY_SELECTED_APPS, selectedApps.toTypedArray())
+                putBoolean(KEY_IS_EXCLUDED, tabs?.selectedTabPosition == 0)
+            }
         )
         dismiss()
     }

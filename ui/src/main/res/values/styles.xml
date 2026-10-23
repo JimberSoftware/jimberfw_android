@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
     <style name="WireGuardTheme.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="android:background">?attr/colorSurface</item>
@@ -8,8 +11,9 @@
         <item name="materialCardViewStyle">@style/WireGuardTheme.MaterialCardView</item>
         <item name="toolbarStyle">@style/WireGuardTheme.Toolbar</item>
         <item name="bottomSheetDialogTheme">@style/WireGuardTheme.BottomSheetDialog</item>
-        <item name="android:statusBarColor">@null</item>\
-        <item name="colorControlHighlight">#000000</item> <!-- Highlight color -->
+        <item name="android:statusBarColor">@null</item>
+        <item name="colorControlHighlight">#000000</item>
+        <item name="android:windowLightStatusBar">@bool/light_status_bar</item>
     </style>
 
     <!-- Various additional API-specific features in values-v*/styles.xml -->

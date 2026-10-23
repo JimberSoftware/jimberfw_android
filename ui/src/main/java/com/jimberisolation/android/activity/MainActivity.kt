@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.activity
@@ -76,8 +76,9 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
 
+        isTwoPaneLayout = findViewById<View?>(R.id.master_detail_wrapper) != null
         spinner = findViewById(R.id.loading_spinner)
-        detailContainer = findViewById(R.id.detail_container)
+        detailContainer = findViewById(if (isTwoPaneLayout) R.id.detail_container else R.id.list_detail_container)
 
         actionBar = supportActionBar
 
@@ -88,7 +89,6 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         supportActionBar?.displayOptions = ActionBar.DISPLAY_SHOW_CUSTOM;
         supportActionBar?.setCustomView(R.layout.jimber_action_bar);
 
-        isTwoPaneLayout = findViewById<View?>(R.id.master_detail_wrapper) != null
         supportFragmentManager.addOnBackStackChangedListener(this)
         backPressedCallback = onBackPressedDispatcher.addCallback(this) { handleBackPressed() }
         onBackStackChanged()
@@ -113,7 +113,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
 
             R.id.menu_action_edit -> {
                 supportFragmentManager.commit {
-                    replace(R.id.detail_container, TunnelEditorFragment())
+                    replace(if (isTwoPaneLayout) R.id.detail_container else R.id.list_detail_container, TunnelEditorFragment())
                     setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
                     addToBackStack(null)
                 }
@@ -153,7 +153,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         } else if (backStackEntries == 0) {
             // Create and show a new detail fragment.
             fragmentManager.commit {
-                add(R.id.detail_container, TunnelDetailFragment())
+                add(if (isTwoPaneLayout) R.id.detail_container else R.id.list_detail_container, TunnelDetailFragment())
                 setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
                 addToBackStack(null)
             }
@@ -211,7 +211,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
 
         withContext(Dispatchers.Main) {
             supportFragmentManager.commit {
-                replace(R.id.detail_container, TunnelListFragment())
+                replace(detailContainer.id, TunnelListFragment())
             }
         }
     }

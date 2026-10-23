@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.fragment
@@ -12,7 +12,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import androidx.core.os.bundleOf
 import androidx.fragment.app.setFragmentResult
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -75,15 +74,15 @@ class AddTunnelsSheet : BottomSheetDialogFragment() {
     }
 
     private fun onRequestCreateConfig() {
-        setFragmentResult(REQUEST_KEY_NEW_TUNNEL, bundleOf(REQUEST_METHOD to REQUEST_CREATE))
+        setFragmentResult(REQUEST_KEY_NEW_TUNNEL, Bundle().apply { putString(REQUEST_METHOD, REQUEST_CREATE) })
     }
 
     private fun onRequestImportConfig() {
-        setFragmentResult(REQUEST_KEY_NEW_TUNNEL, bundleOf(REQUEST_METHOD to REQUEST_IMPORT))
+        setFragmentResult(REQUEST_KEY_NEW_TUNNEL, Bundle().apply { putString(REQUEST_METHOD, REQUEST_IMPORT) })
     }
 
     private fun onRequestScanQRCode() {
-        setFragmentResult(REQUEST_KEY_NEW_TUNNEL, bundleOf(REQUEST_METHOD to REQUEST_SCAN))
+        setFragmentResult(REQUEST_KEY_NEW_TUNNEL, Bundle().apply { putString(REQUEST_METHOD, REQUEST_SCAN) })
     }
 
     companion object {

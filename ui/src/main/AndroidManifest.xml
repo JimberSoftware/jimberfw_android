@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.jimberisolation.android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -33,10 +36,11 @@
 
     <application
         android:name=".Application"
+        android:banner="@drawable/jimber_tv_banner"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Staging Jimber SASE"
+        android:label="Jimber SASE"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
@@ -65,8 +69,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:host="com.jimberisolation.android.staging"
-                    android:path="/BAhPO5r6+gArwttJYkjO2isMw1A="
+                    android:host="com.jimberisolation.android"
+                    android:path="/HZxcpyHnYFiwBvLl/vVFCzUOYzU="
                     android:scheme="msauth" />
             </intent-filter>
         </activity>
@@ -106,9 +110,6 @@
             android:name=".activity.LogViewerActivity"
             android:exported="false"
             android:label="@string/log_viewer_title">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
         </activity>
 
         <provider
@@ -123,14 +124,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.ACTION_SHUTDOWN" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
-            android:name=".updater.Updater$AppUpdatedReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 
