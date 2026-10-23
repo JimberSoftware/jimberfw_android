@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,18 +12,17 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.AttributeSet
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.preference.Preference
 import com.jimberisolation.android.QuickTileService
 import com.jimberisolation.android.R
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 class QuickTilePreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {
     override fun getSummary() = context.getString(R.string.quick_settings_tile_add_summary)
 
     override fun getTitle() = context.getString(R.string.quick_settings_tile_add_title)
 
     override fun onClick() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         val statusBarManager = context.getSystemService(StatusBarManager::class.java)
         statusBarManager.requestAddTileService(
             ComponentName(context, QuickTileService::class.java),

@@ -1,12 +1,11 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.activity
 
 import android.os.Bundle
-import androidx.fragment.app.commit
-import com.jimberisolation.android.fragment.TunnelEditorFragment
+import com.jimberisolation.android.R
 import com.jimberisolation.android.model.ObservableTunnel
 
 /**
@@ -15,11 +14,7 @@ import com.jimberisolation.android.model.ObservableTunnel
 class TunnelCreatorActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
-            supportFragmentManager.commit {
-                add(android.R.id.content, TunnelEditorFragment())
-            }
-        }
+        setContentView(R.layout.tunnel_creator_activity)
     }
 
     override fun onSelectedTunnelChanged(oldTunnel: ObservableTunnel?, newTunnel: ObservableTunnel?): Boolean {

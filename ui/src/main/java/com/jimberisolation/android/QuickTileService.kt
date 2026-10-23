@@ -1,10 +1,11 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android
 
 import android.app.PendingIntent
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -32,7 +33,6 @@ import kotlinx.coroutines.launch
  * system framework as necessary to update the appearance of the tile in the system UI, and to
  * forward click events to the application.
  */
-@RequiresApi(Build.VERSION_CODES.N)
 class QuickTileService : TileService() {
     private val onStateChangedCallback = OnStateChangedCallback()
     private val onTunnelChangedCallback = OnTunnelChangedCallback()
@@ -52,28 +52,33 @@ class QuickTileService : TileService() {
     }
 
     override fun onClick() {
-        updateTile()
-        when (val tunnel = tunnel) {
-            null -> openMainActivity()
-            else -> {
-                unlockAndRun {
-                    applicationScope.launch {
-                        try {
-                            tunnel.setStateAsync(Tunnel.State.TOGGLE)
-                            updateTile()
-                        } catch (_: SecurityException) {
-                            updateTile()
-                            openMainActivity()
-                        } catch (_: Throwable) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !Settings.canDrawOverlays(this@QuickTileService)) {
-                                val permissionIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-                                permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                startActivityAndCollapse(PendingIntent.getActivity(this@QuickTileService, 0, permissionIntent, PendingIntent.FLAG_IMMUTABLE))
-                                return@launch
+        applicationScope.launch {
+            if (tunnel == null) {
+                Application.getTunnelManager().getTunnels()
+            }
+            updateTile()
+            when (val tunnel = tunnel) {
+                null -> openMainActivity()
+                else -> {
+                    unlockAndRun {
+                        applicationScope.launch {
+                            try {
+                                tunnel.setStateAsync(Tunnel.State.TOGGLE)
+                                updateTile()
+                            } catch (_: SecurityException) {
+                                updateTile()
+                                openMainActivity()
+                            } catch (_: Throwable) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !Settings.canDrawOverlays(this@QuickTileService)) {
+                                    val permissionIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+                                    permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    startActivityAndCollapse(PendingIntent.getActivity(this@QuickTileService, 0, permissionIntent, PendingIntent.FLAG_IMMUTABLE))
+                                    return@launch
+                                }
+                                val toggleIntent = Intent(this@QuickTileService, TunnelToggleActivity::class.java)
+                                toggleIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(toggleIntent)
                             }
-                            val toggleIntent = Intent(this@QuickTileService, TunnelToggleActivity::class.java)
-                            toggleIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(toggleIntent)
                         }
                     }
                 }
@@ -81,6 +86,8 @@ class QuickTileService : TileService() {
         }
     }
 
+    // Android 11-13 do not have the PendingIntent overload; the branch below guards it.
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     private fun openMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

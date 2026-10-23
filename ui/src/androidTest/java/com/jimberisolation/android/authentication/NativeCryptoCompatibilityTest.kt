@@ -53,7 +53,8 @@ class NativeCryptoCompatibilityTest {
 
     @Test fun rebuiltWireGuardLibraryLoadsAndReportsVersion() {
         val backend = GoBackend(InstrumentationRegistry.getInstrumentation().targetContext)
-        assertTrue(backend.getVersion().isNotBlank())
+        // Keep this revision in sync with tunnel/tools/libwg-go/go.mod.
+        assertEquals("f333402", backend.getVersion())
     }
 
     @Test fun applicationInitializesNativeCryptoBeforeSignIn() {

@@ -1,6 +1,6 @@
 /*
  * Copyright © 2018 The Android Open Source Project
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.widget
@@ -15,7 +15,6 @@ import androidx.annotation.ColorInt
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresApi
 
-@RequiresApi(Build.VERSION_CODES.N)
 class SlashDrawable(private val mDrawable: Drawable) : Drawable() {
     private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val mPath = Path()
@@ -69,6 +68,7 @@ class SlashDrawable(private val mDrawable: Drawable) : Drawable() {
 
     override fun getIntrinsicWidth() = mDrawable.intrinsicWidth
 
+    @Deprecated("Deprecated in API level 29")
     override fun getOpacity() = PixelFormat.OPAQUE
 
     override fun onBoundsChange(bounds: Rect) {

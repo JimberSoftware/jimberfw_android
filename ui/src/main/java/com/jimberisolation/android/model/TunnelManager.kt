@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.jimberisolation.android.model
@@ -341,10 +341,9 @@ class TunnelManager(private val configStore: ConfigStore) : BaseObservable() {
                     manager.refreshTunnelStates()
                     return@launch
                 }
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !UserKnobs.allowRemoteControlIntents.first())
+                if (!UserKnobs.allowRemoteControlIntents.first())
                     return@launch
-                val state: Tunnel.State
-                state = when (action) {
+                val state = when (action) {
                     "com.jimberisolation.android.action.SET_TUNNEL_UP" -> Tunnel.State.UP
                     "com.jimberisolation.android.action.SET_TUNNEL_DOWN" -> Tunnel.State.DOWN
                     else -> return@launch

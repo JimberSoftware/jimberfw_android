@@ -36,12 +36,56 @@ This is an Android GUI for [WireGuard](https://www.wireguard.com/). It [opportun
 ## Building
 
 ```
-$ git clone --recurse-submodules https://git.zx2c4.com.jimberisolation.android
-$ cd wireguard-android
+$ git clone --recurse-submodules git@github.com:JimberSoftware/jimberfw_android.git
+$ cd jimberfw_android
 $ ./gradlew assembleRelease
 ```
 
 macOS users may need [flock(1)](https://github.com/discoteq/flock).
+
+### Upstream and validation
+
+The fork incorporates WireGuard Android `e7b3a3c1` (2026-03-17), including
+release `1.0.20260315`. Jimber's package name, app version, Android 11 minimum,
+authentication, tunnel ownership checks, environments and branding are retained.
+The Jimber `wireguard-tools` submodule includes the upstream version plus the
+long-tunnel-name changes. The unused official WireGuard APK updater is removed;
+Jimber updates are distributed separately.
+
+Use JDK 17, Android SDK 36.1 and NDK `28.2.13676358`. The wrapper installs Gradle
+9.3.1; Android Gradle Plugin 9.1 supplies Kotlin and legacy kapt support. Release
+builds require the signing configuration described above.
+SDK 36.1 is required by [AndroidX Core 1.18](https://developer.android.com/jetpack/androidx/releases/core#1.18.0),
+including when R8 shrinks the release build. The target SDK remains 36.
+
+Run local checks directly through Gradle (`build.sh` also distributes the APK):
+
+```sh
+./gradlew :ui:assembleDebug :ui:testDebugUnitTest :tunnel:testDebugUnitTest :ui:lintDebug
+./gradlew :ui:assembleRelease :ui:assembleGoogleplay
+./gradlew :ui:connectedDebugAndroidTest
+./gradlew -PandroidTestBuildType=release :ui:connectedReleaseAndroidTest
+```
+
+Run instrumentation on a disposable emulator with no real accounts. Tests use
+local API fixtures and cover sign-in screens, registration, HTTP serialization,
+session renewal, native cryptography, and starting/stopping/restarting a real
+WireGuard VPN service. The VPN test temporarily grants VPN consent to the test
+application and routes only `192.0.2.1/32`, without an external VPN peer.
+Actual Microsoft/Google sign-in and a handshake/data transfer with a Jimber
+gateway still require a manual check with a test account and gateway.
+
+The signed-release suite also checks that MSAL can initialize with the selected
+environment's package, redirect URI and signing certificate. This check is
+skipped for debug packages, which have a different package name and signing key.
+Use the matching production keystore for production; the local staging key does
+not match the production Microsoft redirect.
+
+Validation on 2026-10-23: debug, release and Google Play APK builds passed,
+as did 45 JVM tests, 20 debug emulator tests and 21 staging release emulator tests
+on Android 15 (API 35). Lint completed with no errors and 220 warnings.
+The release APK signature, ZIP alignment and all bundled ARM64/x86_64 native
+library LOAD alignments were checked for 16 KB page compatibility.
 
 ## Embedding
 
@@ -67,5 +111,3 @@ dependencies {
 ## Translating
 
 Please help us translate the app into several languages on [our translation platform](https://crowdin.com/project/WireGuard).
-
-

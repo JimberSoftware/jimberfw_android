@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017-2023 WireGuard LLC. All Rights Reserved.
+ * Copyright © 2017-2025 WireGuard LLC. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -107,6 +107,16 @@ public final class WgQuickBackend implements Backend {
         if (rootShell.run(output, "cat /sys/module/wireguard/version") != 0 || output.isEmpty())
             throw new BackendException(Reason.UNKNOWN_KERNEL_MODULE_NAME);
         return output.get(0);
+    }
+
+    @Override
+    public boolean isAlwaysOn() {
+        return false;
+    }
+
+    @Override
+    public boolean isLockdownEnabled() {
+        return false;
     }
 
     public void setMultipleTunnels(final boolean on) {

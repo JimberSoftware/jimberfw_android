@@ -1,7 +1,5 @@
 @file:Suppress("UnstableApiUsage")
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Properties
 
 val pkg: String = providers.gradleProperty("wireguardPackageName").get()
@@ -12,12 +10,15 @@ keystoreProperties.load(keystorePropertiesFile.inputStream())
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.legacy.kapt)
 }
 
 android {
-    compileSdk = 36
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
     ndkVersion = "28.2.13676358"
     // Use -PandroidTestBuildType=release to exercise the signed, shrunk app.
     testBuildType = providers.gradleProperty("androidTestBuildType").orElse("debug").get()
@@ -64,7 +65,7 @@ android {
             }
 
             // Read the current environment from the file
-            val environmentFile = File("./environments/current_environment")
+            val environmentFile = rootProject.file("environments/current_environment")
             if (environmentFile.exists()) {
                 val environment = environmentFile.readText().trim()
                 when (environment) {
@@ -148,8 +149,4 @@ dependencies {
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xlint:unchecked")
     options.isDeprecation = true
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
 }
